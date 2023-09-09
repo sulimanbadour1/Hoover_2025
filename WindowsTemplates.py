@@ -14,137 +14,204 @@ from pyqtgraph import  plot, mkPen, PlotItem, ScatterPlotWidget, ScatterPlotItem
 import pyqtgraph as pg
 
 
-class ControlTemplate(QWidget):
-    trigger_measure_signal = pyqtSignal(bool)
-    
+class DeviceWindowTemplate(QMainWindow):
+
+    #
+    #
+    #
+    #Functions needed for initialization
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Control Panel - Sensor")
-        self.setGeometry(100, 100, 300, 500)
-        self.device_control = None
-        #self.communication_thread = QThread(self)
-        self.terminal = None #use child 'TerminalWindow(self)' inherited from 'TerminalTemplate'
-        self.plot_window = None #iuse child 'PlotWindow(self)' inherited from 'PlotTemplate'
-        #self.create_thread_communication() #uncomment after creating Thread
         
-    def createMenu(self):
-        #Creating menu
-        self.menu_bar = QMenuBar(self)
-        self.menu_bar.move(0, 0)
-        self.menu_bar.setMaximumHeight(30)
+        #creating Windows from their Templates
+        self.control_window = None
+        self.terminal_window = None
+        self.plot_window = None
+        self.info_window = None
+        self.device_interface = None
+        self.device_thread = QThread(self)
 
-        #Creating main menu cards
-        self.device_menu = self.menu_bar.addMenu("&Connection/Device")
-        self.show_menu = self.menu_bar.addMenu("&Show")
-        self.data_menu = self.menu_bar.addMenu("&Data")
-        self.data_menu = self.menu_bar.addMenu("&Help")
-      
-        #Creating subcards - actions
-        self.show_terminal = QAction("&Terminal window")
-        self.show_graphics = QAction("&Graphical window")
-        self.device_connection= QAction("&Connection")
-        self.device_info = QAction("&Device Info")
-        self.connection_info = QAction("&Connection Info")
-
-        #Adding subcards to proper cards of menu
-        self.show_menu.addAction(self.show_terminal)
-        self.show_menu.addAction(self.show_graphics)
-        self.device_menu.addAction(self.device_info)
-        self.device_menu.addAction(self.connection_info)
-        
-
-    def createGUI(self):
-        """
-        Function creates graphical user interface GUI
-        """
-
-
-        self.layout = QVBoxLayout(self)
-        self.setLayout(self.layout)
-
-    def createStatusBar(self):
-        self.status_bar = QStatusBar()
-        self.layout.addWidget(self.status_bar)
-
-    def adjustGUI(self):
-        """
-        Implement other elements (buttons, texts, sliders, etc.) according to the necessity of particular device
-
-        Use 'self.layout.addWidget(element)' to add your element to the layout
-
-        Use function after self.createGUI or super().__init__() if your class is inherited from this class.
-        Attribute 'self.layout' will be created when inheriting from this calss 
-        therefore it must be created before  element can be added to the layout
-
-
-        """
-
-        #Creating element  - example:
-
-        #self.button = QPushButton(self)
-        #self.button.setGeometry(50, 50, 200, 25)
-        #self.layout.addWidget(self.start_button)
-
-        pass
-    
-    def connectGUI(self):
-        """
-        Function creates connection between elements in the GUI.
-        """
-        pass
-
-    
-    
-    def showTerminalWindow(self):
-
-        #Uncomment after creating proper  object of type PlotWindow inherited from (TerminalTemplate)
-
-        #self.terminal.show()
-        pass
-    
-    def showGraphicWindow(self):
-
-        #Uncomment after creating proper object of type PlotWindow inherited from (PlotTemplate)
-        
-        #self.plot_window.createPlot()
-        #self.plot_window.show()
-
-        pass
-
-
-
+        #uncomment only if testing 
+        #and all attributes (control_window, terminal_window, plot_window, info_window and device_thread) are non None
+        #self.createGUI()   
+        #self.connectGUI()
 
     def createThreadCommunication(self):
         """
         Function moves the object self.device_control into this thread and starts the thread.
         """
-        
-        #Uncomment after creating proper child and ints object of type QThread
+        if self.device_interface is not None:
+            #Deploying device to thread
+            self.device_interface.moveToThread(self.device_thread)
 
-        #self.device_control.moveToThread(self.communication_thread)
-        #self.communication_thread.start()
-        pass
+            #Starting the thread
+            self.device_thread.start()
     
     def reinitializeThread(self, state):
         """
         Function terminates the thread and starts it again.
         """
+        if state == True:
+            self.device_thread.terminate()
+            self.createThreadCommunication()
 
-        #Uncomment after creating proper child and ints object of type QThread
-        #if state == True:
-        #    self.communication_thread.terminate()
-        #    self.create_thread_communication()
+    def destroyThread(self):
+        self.device_thread.terminate()
+    
+
+    #
+    #
+    #
+    #Functions connecting GUI of main device window
+
+
+    def createGUI(self):
+        """
+        Function Creates GUI of Main Device Window
+        """
+        self.setWindowTitle("Device window")
+        self.setGeometry(100, 100, 300, 500)
+        #self.showMaximized()        
+    
+        #self.layout = QVBoxLayout(self)
+        self.createMenu()
+        self.createStatusBar()
+        self.createWindows()
+
+        #Hiding this window by default (since it is not main window of the app but main window for device control)
+        self.hide()
+        
+    
+    def createMenu(self):
+        """
+        Function creates menu bar at the top of the main device window.
+        """
+        
+        #Basic properties of menu bar
+        self.menu_bar = QMenuBar(self)
+        self.menu_bar.move(0, 0)
+        self.menu_bar.setMaximumHeight(30)
+        self.menu_bar.adjustSize()
+        
+        #Creating main menu cards
+        self.device_menu = self.menu_bar.addMenu("&Connection/Device")
+        self.show_menu = self.menu_bar.addMenu("&Show")
+        #self.data_menu = self.menu_bar.addMenu("&Data")
+        self.data_menu = self.menu_bar.addMenu("&Help")
+      
+        #Creating subcards - actions
+        self.show_control = QAction("&Control Panel")
+        self.show_terminal = QAction("&Terminal window")
+        self.show_graphics = QAction("&Graphical window")
+        self.show_info = QAction("&Info Terminal")
+        self.device_connection= QAction("&Connection")
+        self.device_info = QAction("&Device Info")
+        self.connection_info = QAction("&Connection Info")
+
+        #Adding subcards to proper cards of menu
+        self.show_menu_actions = [self.show_control, self.show_terminal, self.show_graphics, self.show_info] 
+        self.show_menu.addActions(self.show_menu_actions)
+
+        self.device_menu_actions = [self.device_info, self.connection_info]
+        self.device_menu.addActions(self.device_menu_actions)
+
+        #Adding menu bar to the window
+        self.setMenuBar(self.menu_bar)
+
+    def createStatusBar(self):
+        self.status_bar = QStatusBar()  
+        self.setStatusBar(self.status_bar)  
+
+    def createWindows(self):
+        """
+        Function creates windows as a part of main device window
+        """
+
+        #Creating dockerizing areas
+        self.control_window_area = QDockWidget('ControlWindow Area')
+        self.terminal_window_area = QDockWidget('Terminal Window Area')
+        self.plot_window_area = QDockWidget('Plot Window Area')
+        self.info_window_area = QDockWidget('Info Window Area')
+
+        self.control_window_area.setGeometry(0,0, 200, 300)
+        self.control_window_area.setMinimumSize(100, 200)
+        self.terminal_window_area.setMinimumSize(100, 25)
+        self.plot_window_area.setMinimumSize(100, 25)
+        self.info_window_area.setMinimumSize(100, 25)
+        #self.terminal_window_area.size(800,400)
+
+        #self.plot_window_area.showMaximized()
+
+        #Adding widgets to the areas
+        self.control_window_area.setWidget(self.control_window)
+        self.plot_window_area.setWidget(self.plot_window)
+        self.terminal_window_area.setWidget(self.terminal_window)
+        self.info_window_area.setWidget(self.info_window)
+
+        self.control_window_area.setAllowedAreas(Qt.LeftDockWidgetArea)
+        self.plot_window_area.setAllowedAreas(Qt.RightDockWidgetArea)
+        self.info_window_area.setAllowedAreas(Qt.BottomDockWidgetArea)
+        #Default setting of window areas
+        self.terminal_window_area.hide()
+        self.plot_window_area.hide()
+        self.info_window_area.hide()
+        
+        #Adding Areas to main window
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.control_window_area)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.plot_window_area)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.info_window_area)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.terminal_window_area)
+    def adjustGUI(self):
+
+        """Function to implement GUI changes if necessary"""
+        
+        #implemet changes of gui here
+
+        pass 
+
+    #
+    #
+    #
+    #Functions connecting GUI of
+
+
+
+    def connectGUI(self):
+        self.connectShowMenu()
+        self.connectElements()
+
+    def connectShowMenu(self):
+        """Fuction connects windows to menu card 'self.show_menu'. 
+            Enables to """
+        self.show_control.triggered.connect(self.control_window_area.showNormal)
+        self.show_terminal.triggered.connect(self.terminal_window_area.showFullScreen)
+        self.show_graphics.triggered.connect(self.plot_window_area.showMaximized)
+        self.show_info.triggered.connect(self.info_window_area.show)
+
+    def connectElements(self):
+        """
+        Function connects the elements, events and threads.
+        """
+        #Implement connection according to device.
         pass
 
-    @pyqtSlot(str)
-    def receiveMessage(self, message: str):
-        """
-        Function receives messages e.g. from data receiving thread (thread connected to device)
-        and displays them in status bar.
-        """
-        self.status_bar.showMessage(message)
+
+class ControlTemplate(QWidget):
+    trigger_measure_signal = pyqtSignal(bool)
     
+
+    def __init__(self, parent):
+        super().__init__()
+        #call createGUI function in the implementation 
+        
+    def createGUI(self):
+        """
+        Function creates graphical user interface GUI
+        """
+
+        pass
+        
 
 
 class TerminalTemplate(QWidget):
@@ -156,11 +223,13 @@ class TerminalTemplate(QWidget):
         If superior object is destroyed the object of this class will be destroyed as well. 
         """
         super().__init__()
-        self.setWindowTitle("Terminal Name") #Change 'Terminal name to proper terminal name'
-        self.setGeometry(700, 100, 500, 300) #Change position of terminal if needed
-        self.createGUI()
+        
+        #call createGUI in the implementation
     
     def createGUI(self):
+        self.setWindowTitle("Terminal Name") #Change 'Terminal name to proper terminal name'
+        self.setGeometry(700, 100, 1000, 300) #Change position of terminal if needed
+
         self.output_box = QTextEdit(self)
         self.output_box.setReadOnly(True)
 
@@ -189,7 +258,7 @@ class PlotTemplate(QWidget):
         super().__init__()
 
         self.setWindowTitle("Plot")
-        self.setGeometry(700, 100, 800, 600)
+        #self.setGeometry(700, 100, 1000, 600)
         
     def createGUI(self):
         self.createPlot()
@@ -238,7 +307,7 @@ class PlotTemplate(QWidget):
 class ConnectionInfoWindow(QWidget):
     
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__()
         self.x = 11
         self.createGUI( )
@@ -267,18 +336,10 @@ class ConnectionInfoWindow(QWidget):
         self.layout.addWidget(self.info_label)
         self.setLayout(self.layout)
 
-class SettingsInfoWindo(QWidget):
+class SettingsInfoTemplate(TerminalTemplate):
 
-    def __init__(self):
-        super().__init__()
-        self.x = 11
-        self.createGUI( )
-
-    def createGUI(self):
-        self.setGeometry(200, 100, 300, 300)
-
-        self.info_label = QLabel("Settings Info")
-        
+    def __init__(self, parent):
+        super().__init__(parent) 
 
     @pyqtSlot(dict)    
     def createInfo(self,data):
@@ -326,4 +387,26 @@ window = ConnectionInfoWindow()
 window.createInfo(data.giveSettingsData())
 window.show() #windows are hidden by default
 applicationAK.exec() # exec() function starts the event loop
+"""
+
+"""
+application = QApplication(sys.argv)
+window = DeviceWindowTemplate()
+
+window.show()
+application.exec()
+"""
+
+
+"""
+Sources:
+
+https://www.geeksforgeeks.org/pyqt5-qdockwidget/
+https://www.tutorialspoint.com/pyqt/pyqt_qdockwidget.htm 
+https://www.pythonguis.com/tutorials/creating-multiple-windows/
+https://www.pythonguis.com/tutorials/pyqt-actions-toolbars-menus/
+https://www.pythontutorial.net/pyqt/pyqt-qdockwidget/
+https://doc.qt.io/qt-6/qdockwidget.html
+https://doc.qt.io/qtforpython-5/PySide2/QtWidgets/QDockWidget.html#PySide2.QtWidgets.PySide2.QtWidgets.QDockWidget.setFloating
+
 """
