@@ -1,148 +1,46 @@
 import sys
 import time
-from WindowsTemplates import TerminalTemplate, ControlTemplate, PlotTemplate
-from DeviceTemplate import DeviceTemplate
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread, QObject
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QTextEdit, QLabel, QVBoxLayout, QAction, QMenuBar, QMenu
-from adafruit_rplidar_AK import RPLidar, RPLidarException
-from pyqtgraph import PlotWidget, plot
-import pyrealsense2 as rs
+import typing
+
+from PyQt5 import QtCore, QtGui
+from WindowsTemplates import TerminalTemplate, ControlTemplate, PlotTemplate, DeviceWindowTemplate
+from IntelRealSenseInterface import Device
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
+from PyQt5.QtWidgets import QApplication, QDockWidget, QPushButton, QTextEdit, QLabel,QWidget, QVBoxLayout, QAction, QMenuBar, QMenu
+from PyQt5.QtGui import QImage, QPixmap, QResizeEvent
 import numpy as np
 import cv2
 
-
-class Device(DeviceTemplate):
-    depth_data_signal =pyqtSignal(np.ndarray)
-    color_data_signal = pyqtSignal(np.ndarray)
-    info_signal = pyqtSignal(dict)
-    end_thread_signal = pyqtSignal(bool)
-
-    def __init__(self):
-        super().__init__(self)
-        self.device_running = False 
-        self.depth_mesure_running = False
-        self.color_running = False
-        self.depth_image_running = True
-        self.initDevice()
-
-    def initDevice(self): 
-        self.pipeline = rs.pipeline() #dataflow of all connected Intel Real Sense Devices
-        self.config = rs.config() #object able to control dataflow
-        self.pipeline_profile = self.config.resolve(self.pipeline) #configuration of dataflow
-        self.device = self.pipeline_profile.get_device() 
-        self.data_array = np.zeros((480, 640+640,3))
-        self.config.enable_stream(rs.stream.depth,640, 480, rs.format.z16, 30) #Enabling depth camera and distance flow
-        self.config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
-    
-    def startDevice(self):
-        self.pipeline.start(self.config)
-        self.device_running = True
-        self.depth_mesure_running = True
-
-    def stopDevice(self):
-        self.pipeline.stop()
-        self.depth_mesure_running = False
-        self.device_running = False
-        
-
-    @pyqtSlot()
-    def measureData(self):
-        """
-        Function for data receive.
-        Function generates signal emiting the tuple 'data'. 
-        In case termination of function is required it is necessary to terminate the whole thread (use 'end_thread_signal').
-        """
-
-        if self.device_running == False or self.measuring_running == False:
-            self.startDevice()
-
-        while self.depth_mesure_running == True:
-            frames = self.pipeline.wait_for_frames()
-            depth_frame = frames.get_depth_frame()
-            color_frame = frames.get_color_frame()
-            if not depth_frame or not color_frame:
-                continue
-            
-            depth_image = np.asanyarray(depth_frame.get_data())
-            color_image = np.asanyarray(color_frame.get_data())
-            depth_data = depth_image
-            color_data = color_image
-
-            self.depth_data_signal.emit(depth_data)
-            self.color_data_signal.emit(color_image)
-            time.sleep(0.1)
-
-    def getDeviceInfo(self):
-        device_product_line = str(self.device.get_info(rs.camera_info.product_line))
-        device_port = str(self.device.get_info(rs.camera_info.physical_port))
-        device_name=str(self.device.get_info(rs.camera_info.name))
-        device_product_id= str(self.device.get_info(rs.camera_info.product_id))
-        device_serial_number = str(self.device.get_info(rs.camera_info.serial_number))
-        device_recommended_firmware_version = str(self.device.get_info(rs.camera_info.recommended_firmware_version))
-        device_type = str(self.device.get_info(rs.camera_info.name))
-        info_dict = {
-            "device product line": device_product_line,
-            "device type": device_type,
-            "device port": device_port,
-            "device name": device_name,
-            "device product id": device_product_id,
-            "device serial number": device_serial_number,
-            "device recommended firmware version": device_recommended_firmware_version
-        } 
-
-        self.info_signal.emit(info_dict)
-
-        #241122074115
-
-
-
-class IntelRealSenseWindow(QWidget):
+class ControlPanelWindow(ControlTemplate):
     trigger_measure_signal = pyqtSignal(bool)
 
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Control Panel - Intel Real Sense L500")
-        self.setGeometry(100, 100, 300, 500)
+    def __init__(self,parent):
+        super().__init__(parent)
         self.createGUI()
-        self.device_control = Device()
-        self.communication_thread = QThread()
-        self.terminal = TerminalWindow(self)
-        self.camera = CameraWindow(self)
-        self.info_terminal = InfoTerminal(self)
-        self.connectGUI()
-        self.createThreadCommunication()
+
         
 
     def createGUI(self):
         """
-        Function creates graphical user interface GUI
+        Function creates graphical user control GUI
         """
-        self.menu_bar = QMenuBar()
-        self.menu_bar.move(0, 0)
-        self.menu_bar.setMaximumHeight(30)
-        self.control_menu = self.menu_bar.addMenu("&Device")
-        self.show_menu = self.menu_bar.addMenu("&Show")
-        self.data_menu = self.menu_bar.addMenu("&Data")
-        self.data_menu = self.menu_bar.addMenu("&Help")
+        self.setWindowTitle("Control Panel - Intel Real Sense L500")
+        self.setGeometry(100, 100, 300, 500)
+
         self.start_button = QPushButton("Start", self)
         self.stop_button = QPushButton("Stop", self)
         self.start_measure_button = QPushButton("Measure", self)
 
-        self.start_button.setGeometry(50, 50, 200, 25)
-        self.stop_button.setGeometry(50, 100, 200, 25)
+        self.start_button.setMinimumSize(100, 25)
+        self.start_button.move(10, 50)
 
-        self.show_terminal = QAction("&Terminal window")
-        self.show_camera = QAction("&Camera window")
-        self.device_connection= QAction("&Connection")
-        self.device_info = QAction("&Device Info")
+        self.stop_button.setMinimumSize(100, 25)
+        self.stop_button.move(10, 100)
 
-        self.show_menu.addAction(self.show_terminal)
-        self.show_menu.addAction(self.show_camera)
-
-        self.control_menu.addAction(self.device_info)
+        self.start_measure_button.setMinimumSize(100, 25)
+        self.start_measure_button.move(10, 150)
 
         self.layout = QVBoxLayout(self)
-        self.layout.setMenuBar(self.menu_bar)
         self.layout.addWidget(self.start_button)
         self.layout.addWidget(self.stop_button)
         self.layout.addWidget(self.start_measure_button)
@@ -155,60 +53,11 @@ class IntelRealSenseWindow(QWidget):
         Function creates connection between elements in the GUI.
         """
 
-        #Connecting menu 
-        self.show_terminal.triggered.connect(self.showTerminalWindow)
-        self.show_camera.triggered.connect(self.showCameraWindow)
-        self.device_info.triggered.connect(self.showDeviceInfoWindow)
-
-        #Data thread initialization
-        self.device_control.end_thread_signal.connect(self.reinitializeThread)
-
-        #Connecting buttons to functions
-        self.start_button.clicked.connect(self.device_control.startDevice)
-        self.stop_button.clicked.connect(self.device_control.stopDevice)
-
-        #Connecting signals from device control to functions (slots)
-        self.device_control.depth_data_signal.connect(self.terminal.receiveData)
-        self.device_control.depth_data_signal.connect(self.camera.receiveDepthData)
-        self.device_control.color_data_signal.connect(self.camera.receiveColorData)
-        self.start_measure_button.clicked.connect(self.device_control.measureData)
-        self.device_control.info_signal.connect(self.info_terminal.receiveData)
-
-    
-    def showTerminalWindow(self):
-        self.terminal.show()
-
-    def showCameraWindow(self):
-        self.camera.show()
-    
-    def showDeviceInfoWindow(self):
-        self.device_control.getDeviceInfo()
-        self.info_terminal.show()
-    
-    def createThreadCommunication(self):
-        """
-        Function moves the object self.device_control into this thread and starts the thread.
-        """
-        self.device_control.moveToThread(self.communication_thread)
-        self.communication_thread.start()
-    
-    def reinitializeThread(self, state):
-        """
-        Function terminates the thread and starts it again.
-        """
-        if state == True:
-            self.communication_thread.terminate()
-            self.create_thread_communication()
-    
-    
-
-            
-
 
 
 class TerminalWindow(TerminalTemplate):
     def __init__(self, parent):
-        super().__init__()
+        super().__init__(parent)
         self.setWindowTitle("Terminal")
         self.setGeometry(700, 100, 500, 300)
         self.createGUI()
@@ -230,17 +79,19 @@ class TerminalWindow(TerminalTemplate):
         print(f"Size: {rows_number} x {columns_number}")
 
 
-class CameraWindow(PlotTemplate):
+class PlotWindow(PlotTemplate):
 
     def __init__(self, parent):
-        super().__init__()
+        super().__init__(parent)
         self.setWindowTitle("Camera")
         self.camera_running = False
-        self.setGeometry(700, 100, 500, 300)
+        self.setGeometry(700, 100, 640, 480)
         self.createGUI()
 
     def createGUI(self):
         self.layout = QVBoxLayout(self)
+        self.color_image  = QLabel(self)
+        self.layout.addWidget(self.color_image)
    
     
     @pyqtSlot(np.ndarray)
@@ -255,20 +106,77 @@ class CameraWindow(PlotTemplate):
         cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
         cv2.imshow('RealSense', depth_colormap)
 
+
+class PlotWindowColor(PlotTemplate):
+    resize_signal = pyqtSignal()
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setWindowTitle("Camera")
+        self.camera_running = False
+        self.setFixedSize(640, 480)
+        self.window_width = 640
+        self.window_height = 480
+        self.createGUI()
+
+    def createGUI(self):
+        self.layout = QVBoxLayout(self)
+        self.color_image  = QLabel(self)
+        self.layout.addWidget(self.color_image)
+        self.color_image.showMaximized()
+        #self.showMaximized()
+    
+    def conntectGUI(self):
+        self.resize_signal.connect()
+
     @pyqtSlot(np.ndarray)
     def receiveColorData(self, data):
         array = data #depth image
+        rgb_array = cv2.cvtColor(array, cv2.COLOR_BGR2RGB)
+       
+
         image_colormap = cv2.applyColorMap(cv2.convertScaleAbs(data, alpha = 0.05), cv2.COLORMAP_JET) #converting values of depth to color scale
+        print(image_colormap.shape)
+        window_width = self.width()
+        window_height = self.height()
+        window_size = (window_width, window_height)
+        #xresized_colormap = cv2.resize(image_colormap,window_size)
         image_colormap_dim = image_colormap.shape 
-
-
-        #Displaying window
+        image_height = image_colormap_dim[0]
+        image_width = image_colormap_dim[1]
+        image_color_num = 3
+        image_line_bytes = image_width * image_color_num
         
-        cv2.namedWindow('RealSense Image', cv2.WINDOW_AUTOSIZE)
-        cv2.imshow('RealSense Image', data)
+        image_channels_bumber = image_colormap_dim[2]
+        """https://www.tutorialkart.com/opencv/python/opencv-python-get-image-size/#gsc.tab=0"""
+        line_bytes_number = image_width * image_channels_bumber
+        """
+        https://gist.github.com/docPhil99/ca4da12c9d6f29b9cea137b617c7b8b1
+        """
+        cv2.namedWindow('RealSenseColor', cv2.WINDOW_AUTOSIZE)
+        cv2.imshow('RealSenseColor', data)
+        qt_image_processing = QImage(rgb_array, 640, 480, 640*3, QImage.Format_RGB888 )
+        #qt_image = qt_image_processing.scaled(self.size())
+        qt_image_pix_map = QPixmap.fromImage(qt_image_processing)
+        self.color_image.setPixmap(qt_image_pix_map)
+        
+    
+    def resizeEvent(self, a0: QResizeEvent) -> None:
+        self.resize_signal.emit()
+        return super().resizeEvent(a0)
+    
+    """
+    def resizeImage(self):
+        self.color_image.setFixedSize(self.size())
+    """
+
+    
 
 
-class InfoTerminal(TerminalWindow):
+
+
+
+class InfoWindow(TerminalWindow):
     def __init__(self,parent):
         super().__init__(parent)
     
@@ -277,6 +185,81 @@ class InfoTerminal(TerminalWindow):
          for key, value in data.items():
             text = "{}: {}\n".format(key, value)
             self.output_box.insertPlainText(text)
+
+class IntelRealSenseWindow(DeviceWindowTemplate):
+    resize_signal = pyqtSignal(bool)
+
+    def __init__(self, parent):
+        super().__init__()
+
+        self.control_window = ControlPanelWindow(self)
+        self.terminal_window = TerminalWindow(self)
+        self.plot_window_color = PlotWindowColor(self) #color camera of Intel Real Sense Device
+        self.plot_window = PlotWindow(self) #depth camera or Intel Real Sense Device
+        self.info_window = InfoWindow(self)
+
+        self.device_interface  = Device(self)
+        self.createGUI()
+        self.adjustGUI()
+        self.connectGUI()
+        self.connectAdjustedGUI()
+        self.createThreadCommunication()
+    
+    def adjustGUI(self):
+        self.setWindowTitle("IntelRealSenseWindow")
+
+        #Adjusting plot window (depth camera image has set size)
+        #self.plot_window_area.setFixedSize(640, 480)
+
+        #Creating Widget Window for color camera
+        self.camera_window_area = QDockWidget("Color Camera Window")
+        #self.camera_window_area.setFixedSize(640, 480)
+        self.camera_window_area.setWidget(self.plot_window_color)
+        self.camera_window_area.setAllowedAreas(Qt.RightDockWidgetArea)
+        self.camera_window_area.hide()
+        self.addDockWidget(Qt.RightDockWidgetArea, self.camera_window_area)
+
+        #Creating menu suncard action for opening color camera
+        self.show_graphics_color  = QAction("&Graphical window - color camera")
+        self.show_menu.addAction(self.show_graphics_color)
+
+        #
+        self.central_widget = QWidget(self)
+        self.central_widget.setMaximumSize(100, 100)
+        self.setCentralWidget(self.central_widget)
+
+
+    def connectAdjustedGUI(self):
+        self.show_graphics_color.triggered.connect(self.camera_window_area.show)
+
+
+    def createGUI(self):
+        return super().createGUI()
+    
+    def connectGUI(self):
+        return super().connectGUI()
+    
+    def connectElements(self):
+
+        #Data thread initialization
+        self.device_interface.end_thread_signal.connect(self.reinitializeThread)
+
+        #Connecting buttons to functions
+        self.control_window.start_button.clicked.connect(self.device_interface.startDevice)
+        self.control_window.stop_button.clicked.connect(self.device_interface.stopDevice)
+        self.control_window.start_measure_button.clicked.connect(self.device_interface.measureData)
+        self.device_info.triggered.connect(self.device_interface.getDeviceInfo)
+
+        #Connecting signals from device control to functions (slots)
+        self.device_interface.depth_data_signal.connect(self.terminal_window.receiveData)
+        self.device_interface.depth_data_signal.connect(self.plot_window.receiveDepthData)
+        self.device_interface.color_data_signal.connect(self.plot_window_color.receiveColorData)
+        self.device_interface.info_signal.connect(self.info_window.receiveData)
+
+        self.plot_window_color.resize_signal.connect(self.adjustSize)
+ 
+
+        
 
 
 """
