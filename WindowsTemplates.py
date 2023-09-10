@@ -122,6 +122,7 @@ class DeviceWindowTemplate(QMainWindow):
     def createStatusBar(self):
         self.status_bar = QStatusBar()  
         self.setStatusBar(self.status_bar)  
+        self.status_bar.showMaximized()
 
     def createWindows(self):
         """
@@ -148,7 +149,8 @@ class DeviceWindowTemplate(QMainWindow):
         self.plot_window_area.setWidget(self.plot_window)
         self.terminal_window_area.setWidget(self.terminal_window)
         self.info_window_area.setWidget(self.info_window)
-
+        #Properties of the areas
+        self.control_window_area.setMaximumWidth(500)
         self.control_window_area.setAllowedAreas(Qt.LeftDockWidgetArea)
         self.plot_window_area.setAllowedAreas(Qt.RightDockWidgetArea)
         self.info_window_area.setAllowedAreas(Qt.BottomDockWidgetArea)
@@ -162,6 +164,8 @@ class DeviceWindowTemplate(QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, self.plot_window_area)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.info_window_area)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.terminal_window_area)
+    
+    
     def adjustGUI(self):
 
         """Function to implement GUI changes if necessary"""
@@ -195,6 +199,20 @@ class DeviceWindowTemplate(QMainWindow):
         """
         #Implement connection according to device.
         pass
+
+    def connectAdjustedGUI(self):
+        """
+        Function connects the elements and events of adjusted GUI.
+        """
+        #Implement connection according to adjusted window.
+        pass
+
+    #
+    #
+    #Other functionns
+    @pyqtSlot(str)
+    def setStatusBarText(self, text: str):
+        self.status_bar.showMessage(text)
 
 
 class ControlTemplate(QWidget):
@@ -245,6 +263,12 @@ class TerminalTemplate(QWidget):
         Replace type with proper data type received from device (nd.array, int, list, dict, etc.)
         """
         pass
+
+    def clearOutputBox(self):
+        """
+        Function cleaning the terminal
+        """
+        self.output_box.clear()
 
 class PlotTemplate(QWidget):
 
@@ -337,12 +361,14 @@ class ConnectionInfoWindow(QWidget):
         self.setLayout(self.layout)
 
 class SettingsInfoTemplate(TerminalTemplate):
+    #Note: used in SensorWindows
 
     def __init__(self, parent):
         super().__init__(parent) 
 
     @pyqtSlot(dict)    
     def createInfo(self,data):
+        self.clearOutputBox()
         self.settings_data = data
 
     
