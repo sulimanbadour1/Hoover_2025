@@ -2,8 +2,8 @@ import sys
 import datetime
 import time
 import random
-from WindowsTemplates import TerminalTemplate, PlotTemplate, ControlTemplate, SettingsInfoTemplate
-from DeviceTemplate import DeviceTemplate
+from WindowsTemplates import TerminalTemplate, PlotTemplate, ControlTemplate, SettingsInfoTemplate, DeviceWindowTemplate
+from device_interfaces.SensorInterface import Device
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread, QObject, QTimer,Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QSizePolicy, QTextEdit, QLabel, QVBoxLayout, QAction, QMenuBar, QMenu
 from pyqtgraph import  plot, mkPen, PlotItem, ScatterPlotWidget, ScatterPlotItem, mkBrush
@@ -15,7 +15,39 @@ matplotlib.use('Qt5Agg')
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
+class SensorWindow(DeviceWindowTemplate):
 
+    def __init__(self, parent):
+        super().__init__()
+        self.control_window = ControlPanelWindow(self)
+        self.terminal_window = TerminalWindow(self)
+        self.plot_window = PlotWindow(self)
+        self.info_window = InfoWindow(self)
+        self.device_interface = Device(self)
+        self.device_thread = QThread(self)
+        self.createGUI()
+        self.connectGUI()
+        self.createThreadCommunication()
+
+    def createGUI(self):
+        return super().createGUI()
+    
+    def connectGUI(self):
+        return super().connectGUI()
+    
+    def connectElements(self):
+
+        #Connecting buttons to functions
+        self.control_window.start_button.clicked.connect(self.device_interface.startDevice)
+        self.control_window.stop_button.clicked.connect(self.device_interface.stopDevice)
+        self.control_window.start_measure_button.clicked.connect(self.device_interface.measureData)
+        self.device_info.triggered.connect(self.device_interface.getDeviceInfo)
+
+        #Connecting signals from device control to functions (slots)
+        self.device_interface.data_signal.connect(self.terminal_window.receiveData)
+        self.device_interface.data_signal.connect(self.plot_window.updatePlot)
+        self.device_interface.info_signal.connect(self.info_window.receiveData)
+        self.device_interface.message_signal.connect(self.setStatusBarText)
 
 class ControlPanelWindow(ControlTemplate):
     trigger_measure_signal = pyqtSignal(bool)
@@ -155,6 +187,7 @@ class InfoWindow(SettingsInfoTemplate):
 
     @pyqtSlot(dict)
     def receiveData(self, data):
+         self.clearOutputBox()
          for key, value in data.items():
             text = "{}: {}\n".format(key, value)
             self.output_box.insertPlainText(text)
