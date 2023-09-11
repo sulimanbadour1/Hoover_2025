@@ -360,7 +360,7 @@ class ConnectionInfoWindow(QWidget):
         self.layout.addWidget(self.info_label)
         self.setLayout(self.layout)
 
-class SettingsInfoTemplate(TerminalTemplate):
+class InfoWindowTemplate(TerminalTemplate):
     #Note: used in SensorWindows
 
     def __init__(self, parent):

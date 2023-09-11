@@ -2,13 +2,14 @@ import sys
 import datetime
 import time
 import random
-from WindowsTemplates import TerminalTemplate, PlotTemplate, ControlTemplate, SettingsInfoTemplate, DeviceWindowTemplate
+from WindowsTemplates import TerminalTemplate, PlotTemplate, ControlTemplate, InfoWindowTemplate, DeviceWindowTemplate
 from device_interfaces.SensorInterface import Device
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread, QObject, QTimer,Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QSizePolicy, QTextEdit, QLabel, QVBoxLayout, QAction, QMenuBar, QMenu
 from pyqtgraph import  plot, mkPen, PlotItem, ScatterPlotWidget, ScatterPlotItem, mkBrush
 import pyqtgraph as pg
 from math import sin, cos
+import numpy as np
 
 import matplotlib
 matplotlib.use('Qt5Agg')
@@ -177,10 +178,11 @@ class PlotWindow(PlotTemplate):
             i+=1
         self.graph_scatter.clear()
         #self.center_point = self.center_scatter.addPoints([0], [0])
+        
         self.plot_data = self.graph_scatter.addPoints(self.x_values, self.y_values )
         
       
-class InfoWindow(SettingsInfoTemplate):
+class InfoWindow(InfoWindowTemplate):
     def __init__(self, parent):
         super().__init__(parent)
         self.createGUI()
