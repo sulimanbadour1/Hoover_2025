@@ -78,6 +78,7 @@ class DeviceWindowTemplate(QMainWindow):
         self.createMenu()
         self.createStatusBar()
         self.createWindows()
+        self.adjustGUI()
 
         #Hiding this window by default (since it is not main window of the app but main window for device control)
         self.hide()
@@ -105,7 +106,6 @@ class DeviceWindowTemplate(QMainWindow):
         self.show_terminal = QAction("&Terminal window")
         self.show_graphics = QAction("&Graphical window")
         self.show_info = QAction("&Info Terminal")
-        self.device_connection= QAction("&Connection")
         self.device_info = QAction("&Device Info")
         self.connection_info = QAction("&Connection Info")
 
@@ -184,6 +184,7 @@ class DeviceWindowTemplate(QMainWindow):
     def connectGUI(self):
         self.connectShowMenu()
         self.connectElements()
+        self.connectAdjustedGUI()
 
     def connectShowMenu(self):
         """Fuction connects windows to menu card 'self.show_menu'. 
@@ -281,14 +282,23 @@ class PlotTemplate(QWidget):
 
         super().__init__()
 
-        self.setWindowTitle("Plot")
+        
         #self.setGeometry(700, 100, 1000, 600)
         
     def createGUI(self):
+        #Window properties
+        self.setWindowTitle("Plot")
         self.createPlot()
         self.layout = QVBoxLayout(self)
         self.layout.addWidget(self.graph)
+        self.adjustGUI()
         self.setLayout(self.layout)
+
+    def adjustGUI(self):
+        """
+        Function enables to adjust GUI of plot template.
+        """
+        pass
 
     def createPlot(self):
         """
