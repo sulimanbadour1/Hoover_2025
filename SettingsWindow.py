@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtSerialPort import QSerialPort, QSerialPortInfo
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread, QObject
+from IntelRealSenseData import IntelRealSenseData
 
 class SettingsWindow(QWidget):
         
@@ -13,7 +14,7 @@ class SettingsWindow(QWidget):
             
             self.device_list = ["No device","RP Lidar", "TI Radar", "Time of Flight", "Intel Real Sense",  "Sensor"]
             self.inter_real_sense_devices =  ["No Intel device", "Lidar L500", "Depth Camera D435i Dev 1", "Depth Camera D435i Dev 2"]
-            
+            self.data = IntelRealSenseData()
 
             self.port_list = ["No port"]
             self.createGUI()
@@ -26,6 +27,13 @@ class SettingsWindow(QWidget):
             self.layout = QVBoxLayout()
             self.setLayout(self.layout)
 
+            #Properties of the SettingsWindow GUI
+            self.move(300, 150)
+            self.setBaseSize(450, 600)
+            self.setMinimumSize(450, 400)
+            self.setMaximumSize(700, 700)
+            self.setWindowTitle('Settings Window') 
+
             #Calling function creating minor layouts
             self.createDeviceSettingsGUI()
             self.createPortSettingsGUI()
@@ -37,12 +45,11 @@ class SettingsWindow(QWidget):
             self.layout.addWidget(self.port_settings)
             self.layout.addWidget(self.spec_device_settings)
             self.layout.addWidget(self.ok_widget)
-            
-            self.move(300, 150)
-            self.setBaseSize(450, 600)
-            self.setMinimumSize(450, 400)
-            self.setMaximumSize(700, 700)
-            self.setWindowTitle('Settings Window')  
+
+            #Hiding window by default 
+            self.hide()
+
+         
 
         def createSettingsGUI(self):
             
@@ -145,11 +152,19 @@ class SettingsWindow(QWidget):
             self.cancel_button.clicked.connect(self.cancelClicked)
 
         def okClicked(self):
+
+            dev_name = self.device_combo_box.currentText()
+            if dev_name == "Intel Real Sense":
+                 serial_num  = self.data.matchSerialNumber(self.spec_device_settings_combo_box.currentText())
+            else:
+                 serial_num = "No serial number set"
+        
             settings_dictionary= {
                 "Device": self.device_combo_box.currentText(),
                 "Port 1": self.port1_combo_box.currentText(),
                 "Port 2": self.port2_combo_box.currentText(),
-                "Device specification": self.spec_device_settings_combo_box.currentText()
+                "Device specification": self.spec_device_settings_combo_box.currentText(),
+                "Serial number": serial_num
                 }
             self.settings_signal.emit(settings_dictionary)
             self.close()
@@ -205,9 +220,10 @@ class SettingsWindow(QWidget):
         
 
 
+"""
 applicationAK = QApplication(sys.argv)
 window = SettingsWindow()
 window.show() #windows are hidden by default
 applicationAK.exec() # exec() function starts the event loop
 
-
+"""
