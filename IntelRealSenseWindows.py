@@ -4,7 +4,7 @@ import typing
 
 from PyQt5 import QtCore, QtGui
 from WindowsTemplates import TerminalTemplate, ControlTemplate, PlotTemplate, DeviceWindowTemplate
-from IntelRealSenseInterface import Device
+from device_interfaces.IntelRealSenseInterface import Device
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
 from PyQt5.QtWidgets import QApplication, QDockWidget, QPushButton, QTextEdit, QLabel,QWidget, QVBoxLayout, QAction, QMenuBar, QMenu
 from PyQt5.QtGui import QImage, QPixmap, QResizeEvent
@@ -47,11 +47,6 @@ class ControlPanelWindow(ControlTemplate):
         self.setLayout(self.layout)
 
 
-    
-    def connectGUI(self):
-        """
-        Function creates connection between elements in the GUI.
-        """
 
 
 
@@ -73,10 +68,11 @@ class TerminalWindow(TerminalTemplate):
     @pyqtSlot(np.ndarray)
     def receiveData(self, data):
         array = str(data)
+        self.output_box.insertPlainText("\nDepth Matrix: ")
         self.output_box.insertPlainText(array)
         rows_number = np.size(data, 0)
         columns_number = np.size(data, 1)
-        print(f"Size: {rows_number} x {columns_number}")
+        #print(f"Size: {rows_number} x {columns_number}")
 
 
 class PlotWindow(PlotTemplate):
@@ -90,8 +86,9 @@ class PlotWindow(PlotTemplate):
 
     def createGUI(self):
         self.layout = QVBoxLayout(self)
-        self.color_image  = QLabel(self)
-        self.layout.addWidget(self.color_image)
+        self.depth_image  = QLabel(self)
+        self.layout.addWidget(self.depth_image)
+        self.depth_image.showMaximized()
    
     
     @pyqtSlot(np.ndarray)
@@ -100,11 +97,16 @@ class PlotWindow(PlotTemplate):
         depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(data, alpha = 0.05), cv2.COLORMAP_JET) #converting values of depth to color scale
         depth_colormap_dim = depth_colormap.shape 
 
+        qt_image_processing = QImage(depth_colormap, 640, 480, 640*3, QImage.Format_RGB888 )
+        #qt_image = qt_image_processing.scaled(self.size())
+        qt_image_pix_map = QPixmap.fromImage(qt_image_processing)
+        self.depth_image.setPixmap(qt_image_pix_map)
+
 
         #Displaying window
         
-        cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
-        cv2.imshow('RealSense', depth_colormap)
+        #cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
+        #cv2.imshow('RealSense', depth_colormap)
 
 
 class PlotWindowColor(PlotTemplate):
@@ -153,8 +155,8 @@ class PlotWindowColor(PlotTemplate):
         """
         https://gist.github.com/docPhil99/ca4da12c9d6f29b9cea137b617c7b8b1
         """
-        cv2.namedWindow('RealSenseColor', cv2.WINDOW_AUTOSIZE)
-        cv2.imshow('RealSenseColor', data)
+        #cv2.namedWindow('RealSenseColor', cv2.WINDOW_AUTOSIZE)
+        #cv2.imshow('RealSenseColor', data)
         qt_image_processing = QImage(rgb_array, 640, 480, 640*3, QImage.Format_RGB888 )
         #qt_image = qt_image_processing.scaled(self.size())
         qt_image_pix_map = QPixmap.fromImage(qt_image_processing)
