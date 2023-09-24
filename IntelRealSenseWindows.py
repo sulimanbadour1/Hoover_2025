@@ -191,16 +191,18 @@ class InfoWindow(TerminalWindow):
 class IntelRealSenseWindow(DeviceWindowTemplate):
     resize_signal = pyqtSignal(bool)
 
-    def __init__(self, parent):
+    def __init__(self, serial_number = "No number"):
         super().__init__()
 
+        self.serial_number = serial_number
         self.control_window = ControlPanelWindow(self)
         self.terminal_window = TerminalWindow(self)
         self.plot_window_color = PlotWindowColor(self) #color camera of Intel Real Sense Device
         self.plot_window = PlotWindow(self) #depth camera or Intel Real Sense Device
         self.info_window = InfoWindow(self)
 
-        self.device_interface  = Device(self)
+
+        self.device_interface  = Device(serial_number = self.serial_number)
         self.createGUI()
         self.adjustGUI()
         self.connectGUI()
@@ -266,7 +268,7 @@ class IntelRealSenseWindow(DeviceWindowTemplate):
 
 """
 applicationAK = QApplication(sys.argv)
-window = ControlPanelWindow()
+window = IntelRealSenseWindow()
 window.show() #windows are hidden by default
 applicationAK.exec_() # exec() function starts the event loop
 """
