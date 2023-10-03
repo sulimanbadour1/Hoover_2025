@@ -99,7 +99,7 @@ class DeviceWindowTemplate(QMainWindow):
         self.device_menu = self.menu_bar.addMenu("&Connection/Device")
         self.show_menu = self.menu_bar.addMenu("&Show")
         #self.data_menu = self.menu_bar.addMenu("&Data")
-        self.data_menu = self.menu_bar.addMenu("&Help")
+        self.help_menu = self.menu_bar.addMenu("&Help")
       
         #Creating subcards - actions
         self.show_control = QAction("&Control Panel")
@@ -220,7 +220,7 @@ class ControlTemplate(QWidget):
     trigger_measure_signal = pyqtSignal(bool)
     
 
-    def __init__(self, parent):
+    def __init__(self, **parent):
         super().__init__()
         #call createGUI function in the implementation 
         
@@ -235,7 +235,7 @@ class ControlTemplate(QWidget):
 
 class TerminalTemplate(QWidget):
 
-    def __init__(self, parent):
+    def __init__(self, **parent):
         """
         parent - superior object (e.g superior window)
         
@@ -273,7 +273,7 @@ class TerminalTemplate(QWidget):
 
 class PlotTemplate(QWidget):
 
-    def __init__(self, parent):
+    def __init__(self, **parent):
         """
         parent - superior object (e.g superior window)
         
@@ -341,7 +341,7 @@ class PlotTemplate(QWidget):
 class ConnectionInfoWindow(QWidget):
     
 
-    def __init__(self, parent):
+    def __init__(self, **parent):
         super().__init__()
         self.x = 11
         self.createGUI( )
@@ -373,8 +373,8 @@ class ConnectionInfoWindow(QWidget):
 class InfoWindowTemplate(TerminalTemplate):
     #Note: used in SensorWindows
 
-    def __init__(self, parent):
-        super().__init__(parent) 
+    def __init__(self, **parent):
+        super().__init__() 
 
     @pyqtSlot(dict)    
     def createInfo(self,data):
@@ -382,38 +382,75 @@ class InfoWindowTemplate(TerminalTemplate):
         self.settings_data = data
 
     
-class MainWindowContent(QWidget):
+class MainWindow(QMainWindow):
 
         
         def __init__(self):
             super().__init__()
-            self.createGUI()
-            
-            self.show()
         
             #self.connectAdjustedGUI()
 
         def createGUI(self):
-                self.layout = QGridLayout()
-                
+                self.layout = QVBoxLayout()
+                self.setLayout(self.layout)
 
+                self.adjustGUI()
+                self.createMenu()
+                self.createStatusBar()
+
+        def adjustGUI(self):
                 self.label = QLabel("Sensor Application")
                 self.label.setFont(QFont('Times', 18))
                 #Settings Window Button            
-                self.settings_button = QPushButton(self)
-                self.settings_button.setFixedSize(300, 100)
-                self.settings_button.setText("Settings")
+                self.settings_button = QPushButton("Settings")
+                self.settings_button.setFixedSize(200, 50)
 
 
                 #Sensor Window Button            
-                self.run_button = QPushButton(self)
-                self.run_button.setText("Run")
-                self.run_button.setFixedSize(300, 100)
-                self.layout.addWidget(self.settings_button, 1, 1)
-                self.layout.addWidget(self.run_button,2,1)
+                self.run_button = QPushButton("RUN")
+                self.run_button.setFixedSize(200, 50)
 
-                self.setLayout(self.layout)
 
+                #Cancel Window Button
+                self.cancel_button = QPushButton("Cancel")
+                self.cancel_button.setFixedSize(200, 50)
+
+                #Adding elements to the layout
+                self.layout.addWidget(self.run_button, alignment = Qt.AlignCenter )
+                self.layout.addWidget(self.settings_button, alignment = Qt.AlignCenter)
+                self.layout.addWidget(self.cancel_button, alignment = Qt.AlignCenter )
+
+
+        def createMenu(self):
+            """
+            Function creates menu bar at the top of the main device window.
+            """
+            
+            #Basic properties of menu bar
+            self.menu_bar = QMenuBar(self)
+            self.menu_bar.move(0, 0)
+            self.menu_bar.setMaximumHeight(30)
+            self.menu_bar.adjustSize()
+            
+            #Creating main menu cards
+            self.device_menu = self.menu_bar.addMenu("&Connection")
+            self.help_menu = self.menu_bar.addMenu("&Help")
+
+            #Creating subcards
+            self.connection_info = QAction("&Connection Info")
+            
+            #Adding subcards to proper cards of menu
+            self.device_menu.addActions(self.device_menu_actions)
+
+            #Adding menu bar to the window
+            self.setMenuBar(self.menu_bar)
+
+        def createStatusBar(self):
+            self.status_bar = QStatusBar()  
+            self.setStatusBar(self.status_bar)  
+            self.status_bar.showMaximized()
+
+        
         
 """
 applicationAK = QApplication(sys.argv)
