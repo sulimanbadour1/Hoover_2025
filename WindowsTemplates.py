@@ -220,7 +220,7 @@ class ControlTemplate(QWidget):
     trigger_measure_signal = pyqtSignal(bool)
     
 
-    def __init__(self, **parent):
+    def __init__(self, parent = None):
         super().__init__()
         #call createGUI function in the implementation 
         
@@ -235,7 +235,7 @@ class ControlTemplate(QWidget):
 
 class TerminalTemplate(QWidget):
 
-    def __init__(self, **parent):
+    def __init__(self, parent = None):
         """
         parent - superior object (e.g superior window)
         
@@ -273,7 +273,7 @@ class TerminalTemplate(QWidget):
 
 class PlotTemplate(QWidget):
 
-    def __init__(self, **parent):
+    def __init__(self, parent = None):
         """
         parent - superior object (e.g superior window)
         
@@ -341,7 +341,7 @@ class PlotTemplate(QWidget):
 class ConnectionInfoWindow(QWidget):
     
 
-    def __init__(self, **parent):
+    def __init__(self, parent = None):
         super().__init__()
         self.x = 11
         self.createGUI( )
@@ -373,7 +373,7 @@ class ConnectionInfoWindow(QWidget):
 class InfoWindowTemplate(TerminalTemplate):
     #Note: used in SensorWindows
 
-    def __init__(self, **parent):
+    def __init__(self, parent = None):
         super().__init__() 
 
     @pyqtSlot(dict)    
