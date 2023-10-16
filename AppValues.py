@@ -13,7 +13,8 @@ class  AppValues(QObject):
                 "Device": "No Device",
                 "Port 1": "No Port",
                 "Port 2": "No port",
-                "Specification": "No specification"
+                "Device specification": "No specification",
+                "Serial number": "No serial number"
                 } 
         self.name = "Nm"#dictionary to save current settings when settings window is closed 
     
