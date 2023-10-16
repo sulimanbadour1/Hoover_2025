@@ -495,10 +495,10 @@ class ProcessWindow(QLabel):
         self.coords_signal.emit(self.selected_area)
 
 
-applicationAK = QApplication(sys.argv)
+""" applicationAK = QApplication(sys.argv)
 window = IntelRealSenseWindow()
 window.show() #windows are hidden by default
-applicationAK.exec_() # exec() function starts the event loop
+applicationAK.exec_() # exec() function starts the event loop """
 
 
 """
