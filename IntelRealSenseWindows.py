@@ -6,12 +6,14 @@ from PyQt5 import QtCore, QtGui
 from WindowsTemplates import *
 from device_interfaces.IntelRealSenseInterface import Device
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread, QObject, QPoint, QRect, QSize
-from PyQt5.QtWidgets import QApplication, QDockWidget, QPushButton, QTextEdit, QLabel,QWidget, QVBoxLayout, QAction, QMenuBar, QMenu
+from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QImage, QPixmap, QResizeEvent
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import cv2
+
+from HelpWindows import HelpWindow
 from Info import Info
 from app_functions.app_functions import Converter, Cutter
 
@@ -32,6 +34,7 @@ class IntelRealSenseWindow(DeviceWindowTemplate):
         self.info_window = InfoWindow()
         self.central_widget = CentralWidgetWindow()
         self.process_window = ProcessWindow()
+        self.process_window_area = ProcessWindowArea()
 
         #creating objects helping with data processing and information
         self.info_provider = Info()
@@ -52,6 +55,8 @@ class IntelRealSenseWindow(DeviceWindowTemplate):
         #Running functions necessary to complete initialization of the Main Window 
         self.device_interface.getDeviceInfo()
 
+        #Showing graphical (self.plot_window) and camera window (self.plot_window_color) by default
+        self.show_default_windows()
 
     def moveTerminalToThread(self):
         self.terminal_thread = QThread()
@@ -61,39 +66,31 @@ class IntelRealSenseWindow(DeviceWindowTemplate):
     def adjustGUI(self):
         self.setWindowTitle("IntelRealSenseWindow")
 
-        #Adjusting plot window (depth camera image has set size)
-        #self.plot_window_area.setFixedSize(640, 480)
-
-        #Creating Widget Window for color camera and point cloud
+        #Creating Widget Window for color camera
         self.camera_window_area = QDockWidget("Camera Window")
-        self.point_cloud_window_area = QDockWidget("Point Cloud Window")
-        #self.camera_window_area.setFixedSize(640, 480)
         self.camera_window_area.setWidget(self.plot_window_color)
         self.camera_window_area.setAllowedAreas(Qt.RightDockWidgetArea)
         self.camera_window_area.hide()
         self.addDockWidget(Qt.RightDockWidgetArea, self.camera_window_area)
-        """ self.point_cloud_window_area.setWidget(self.plot_window_color)
-        self.point_cloud_window_area.setAllowedAreas(Qt.RightDockWidgetArea)
-        self.point_cloud_window_area.hide()
-        self.addDockWidget(Qt.RightDockWidgetArea, self.point_cloud_window_area) """
 
         #Creating menu subcard action for opening color camera
         self.show_graphics_color  = QAction("&Camera")
         self.window_menu.addAction(self.show_graphics_color)
-        """ self.show_point_cloud  = QAction("&Point cloud")
-        self.window_menu.addAction(self.show_point_cloud) """
 
         self.depth_evaluation  = QAction("&Evaluate Depth Image")
         self.data_menu.addAction(self.depth_evaluation)
 
         #Setting central window with info
-        self.central_widget.setInfoText(self.info_provider.IntelRealSenseInfo)
+        self.central_widget
+        self.central_widget.setInfoText(Info.IntelRealSenseInfoCZ, 'CZ' )
+        self.central_widget.setInfoText(Info.IntelRealSenseInfoEN, 'EN' )
         self.setCentralWidget(self.central_widget)
 
         
 
     def connectAdjustedGUI(self):
         self.show_graphics_color.triggered.connect(self.camera_window_area.show)
+        self.control_window.evaluate_button.clicked.connect(self.processDepthImage)
 
 
 
@@ -121,15 +118,10 @@ class IntelRealSenseWindow(DeviceWindowTemplate):
         self.device_interface.depth_data_signal.connect(self.plot_window.receiveDepthData)
         self.device_interface.depth_data_signal.connect(self.storeDepthData)
         self.device_interface.color_data_signal.connect(self.plot_window_color.receiveColorData)
-        self.process_window.coords_signal.connect(self.cropDepthImage)
-        #self.device_interface.depth_data_signal.connect(self.point_cloud_window.receiveData)
-        #self.device_interface.point_cloud_signal.connect(self.point_cloud_window.receiveData)
+        self.process_window_area.process_window.coords_signal.connect(self.cropDepthImage)
         self.device_interface.info_signal.connect(self.info_window.receiveData)
         self.device_interface.info_signal.connect(self.plot_window_color.setColorImageSize)
-        #self.device_interface.point_cloud_signal.connect(self.terminal_window.receiveData)
         self.device_interface.message_signal.connect(self.setStatusBarText)
-        #self.data_flow_window.data_signal.connect(self.point_cloud_window.setDataFlow)
-
         self.plot_window_color.resize_signal.connect(self.adjustSize)  
         
 
@@ -142,17 +134,13 @@ class IntelRealSenseWindow(DeviceWindowTemplate):
         """
         self.depth_data = data
 
-    @pyqtSlot(np.ndarray)
-    def storePointsData(self, data):
-        """
-        Stores data from depth image in form of point cloud points.
-        """
-        self.points_data = data
-
 
     def processDepthImage(self):
-        self.process_window.setPixmap(self.plot_window.pix_map)
-        self.process_window.show()
+        self.process_window_area.process_window.setPixmap(self.plot_window.pix_map)
+        self.process_window_area.show()
+        self.process_window_area.process_window.show()
+
+    
 
     @pyqtSlot(tuple)
     def cropDepthImage(self, border_coords):
@@ -171,10 +159,9 @@ class IntelRealSenseWindow(DeviceWindowTemplate):
         cropped_image = self.cutter.cutArray(data_raw, row_begin, row_end, column_begin, column_end)
 
 
-
         #Printing cropped imag in terminal window
         self.terminal_window.printMatrix(cropped_image)
-        plt.subplot(1,2,1)
+        plt.subplot(1,1,1)
         plt.imshow(cropped_image)
         plt.title("Depth value")
         plt.colorbar() 
@@ -182,21 +169,29 @@ class IntelRealSenseWindow(DeviceWindowTemplate):
         #Adding scale to image 
         plt.show()
 
-    def processPointCloud(self):
-        #self.converter.numpy_object_to_open3d(self.points_data)
-        point_cloud = self.points_data
-        fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-        ax.scatter3D(point_cloud[:, 0], point_cloud[:, 1], point_cloud[:, 2])
-        # label the axes
-        ax.set_xlabel("X")
-        ax.set_ylabel("Y")
-        ax.set_zlabel("Z")
-        ax.set_title("Random Point Cloud")
-        # display:
-        plt.show()
+
+
+    def closeEvent(self, event) -> None:
+        
+        #closing subwindows when main window is closed
+
+        self.control_window.close()
+        self.terminal_window.close()
+        self.plot_window_color.close()
+        self.plot_window.close()
+        self.info_window.close()
+        self.central_widget.close()
+        #self.process_window = ProcessWindow()
+        self.process_window_area.close()
 
 
 
+    def show_default_windows(self):
+        """
+        Function shows default output windows in main window.
+        """
+        self.terminal_window_area.show()
+        self.plot_window_area.show()
 
 
 
@@ -212,7 +207,7 @@ class ControlPanelWindow(ControlTemplate):
 
     def createGUI(self):
         """
-        Function creates graphical user control GUI
+        Function creates user control GUI
         """
         self.setWindowTitle("Control Panel - Intel Real Sense L500")
         self.setGeometry(100, 100, 300, 500)
@@ -220,6 +215,7 @@ class ControlPanelWindow(ControlTemplate):
         self.start_button = QPushButton("Start", self)
         self.stop_button = QPushButton("Stop", self)
         self.start_measure_button = QPushButton("Measure", self)
+        self.evaluate_button = QPushButton("Evaluate", self)
 
         self.start_button.setMinimumSize(100, 25)
         self.start_button.move(10, 50)
@@ -230,10 +226,13 @@ class ControlPanelWindow(ControlTemplate):
         self.start_measure_button.setMinimumSize(100, 25)
         self.start_measure_button.move(10, 150)
 
-        self.layout = QVBoxLayout(self)
-        self.layout.addWidget(self.start_button)
-        self.layout.addWidget(self.stop_button)
-        self.layout.addWidget(self.start_measure_button)
+        self.evaluate_button.setMinimumSize(100, 25)
+        
+        self.layout = QGridLayout(self)
+        self.layout.addWidget(self.start_button, 0 , 0)
+        self.layout.addWidget(self.stop_button, 1, 0)
+        self.layout.addWidget(self.start_measure_button, 2, 0)
+        self.layout.addWidget(self.evaluate_button, 4, 0)
         self.setLayout(self.layout)
 
 
@@ -366,7 +365,7 @@ class PlotWindowColor(PlotTemplate):
     
 
         image_colormap = cv2.applyColorMap(cv2.convertScaleAbs(data, alpha = 0.05), cv2.COLORMAP_JET) #converting values of depth to color scale
-        print(image_colormap.shape)
+
         
         #xresized_colormap = cv2.resize(image_colormap,window_size)
         image_colormap_dim = image_colormap.shape 
@@ -428,12 +427,15 @@ class InfoWindow(TerminalWindow):
     
     @pyqtSlot(dict)
     def receiveData(self, data):
+        """
+        Function receives data from data signal from device thread.
+        """
          
-         #Clearing output box from previous data
-         self.output_box.clear()
+        #Clearing output box from previous data
+        self.output_box.clear()
 
-         #Printing data to output box
-         for key, value in data.items():
+        #Printing data to output box
+        for key, value in data.items():
             text = "{}: {}\n".format(key, value)
             self.output_box.insertPlainText(text)
 
@@ -494,6 +496,67 @@ class ProcessWindow(QLabel):
 
         self.coords_signal.emit(self.selected_area)
 
+class ProcessWindowArea(QWidget):
+
+    def __init__(self, parent = None):
+        super().__init__(parent)
+
+        self.process_window = ProcessWindow()
+        self.help_window = HelpWindow()
+
+        self.createGUI()
+
+
+        #hiding window by default 
+        self.hide()
+
+    def createGUI(self):
+        self.setWindowTitle("Process Depth Image")
+        self.layout = QVBoxLayout()
+        self.setBaseSize(1200, 800)
+
+        #Creating elements and adding them to layout
+        self.createElements()
+        self.layout.addWidget(self.process_window, alignment = Qt.AlignCenter)
+        self.setLayout(self.layout)
+
+    def createElements(self):
+        self.info_line1CZ = QLabel(Info.IntelDragDrawInfoCZ, alignment = Qt.AlignCenter)
+        self.info_line1CZ.setFont(QFont('Times', 10))
+
+        self.info_line2CZ = QLabel(Info.IntelSelectAreaInfoCZ)
+        self.info_line2CZ.setFont(QFont('Times', 8))
+
+        self.info_line1EN = QLabel(Info.IntelDragDrawInfoEN, alignment = Qt.AlignCenter)
+        self.info_line1EN.setFont(QFont('Times', 8))
+
+        self.info_line2EN = QLabel(Info.IntelSelectAreaInfoEN)
+        self.info_line2EN.setFont(QFont('Times', 8))
+
+        self.layout.addWidget(self.info_line1CZ, alignment = Qt.AlignCenter)
+        self.layout.addWidget(self.info_line2CZ, alignment = Qt.AlignCenter)
+        self.layout.addWidget(self.info_line1EN, alignment = Qt.AlignCenter)
+        self.layout.addWidget(self.info_line2EN, alignment = Qt.AlignCenter)
+        
+    def closeEvent(self, event) -> None:
+        #closing subwindows when window is closed
+        self.process_window.close()
+
+    def openTip(self):
+        info = Info.IntelSelectAreaInfoCZ + "\n" + Info.IntelSelectAreaInfoEN
+        self.help_window.setInfo(info)
+
+   
+
+
+
+
+
+
+""" applicationAK = QApplication(sys.argv)
+window = IntelRealSenseWindow()
+window.show() #windows are hidden by default
+applicationAK.exec_() # exec() function starts the event loop """
 
 """ applicationAK = QApplication(sys.argv)
 window = IntelRealSenseWindow()
