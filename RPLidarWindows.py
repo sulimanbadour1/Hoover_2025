@@ -4,13 +4,13 @@ from math import sin, cos
 from device_interfaces.RPLidarInterface import Device
 from WindowsTemplates import DeviceWindowTemplate, ControlTemplate, PlotTemplate, TerminalTemplate, InfoWindowTemplate
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread, QObject, Qt
-from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QSlider, QVBoxLayout, QHBoxLayout, QAction, QLineEdit
+from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QSlider, QVBoxLayout, QHBoxLayout, QAction, QLineEdit, QApplication
 from pyqtgraph import  plot, mkPen, PlotItem, ScatterPlotWidget, ScatterPlotItem, mkBrush
 import pyqtgraph as pg
 
 class RPLidarWindow(DeviceWindowTemplate):
 
-    def __init__(self, parent, port = 'COM3'):
+    def __init__(self, parent = None, port = 'COM3'):
         super().__init__()
         self.port = port
 
@@ -227,12 +227,11 @@ class InfoWindow(InfoWindowTemplate):
             self.output_box.insertPlainText(text)
 
 
-"""
-applicationAK = QApplication(sys.argv)
-window = RPLidarWindow('COM4')
+
+""" applicationAK = QApplication(sys.argv)
+window = RPLidarWindow(port = 'COM4')
 window.show() #windows are hidden by default
-applicationAK.exec() # exec() function starts the event loop
-"""
+applicationAK.exec() # exec() function starts the event loop """
 
 
 
