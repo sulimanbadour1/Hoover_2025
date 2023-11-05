@@ -115,3 +115,6 @@ class Info():
     If measuring the distance of certain object selected area should be inside the object (Large distance range can lower the resolution of depth image).
     The area should be small for better reading of output matrix in Terminal Window (Large area can make the reading of the matrix distances more difficult because of too many columns and rows).
 """
+    SettingsSearchPortsInfoCZ = """Přiřazené porty k zařízení je potřeba najít ve 'Správce zařízení' (Start -> Správce zařízení)."""
+
+    SettingsSearchPortsInfoEN = """Please look to 'Device  Manager' (Start -> Device Manager) to find what ports are assigned to your device"""
