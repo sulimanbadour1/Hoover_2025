@@ -115,6 +115,27 @@ class Info():
     If measuring the distance of certain object selected area should be inside the object (Large distance range can lower the resolution of depth image).
     The area should be small for better reading of output matrix in Terminal Window (Large area can make the reading of the matrix distances more difficult because of too many columns and rows).
 """
+
+
     SettingsSearchPortsInfoCZ = """Přiřazené porty k zařízení je potřeba najít ve 'Správce zařízení' (Start -> Správce zařízení)."""
 
     SettingsSearchPortsInfoEN = """Please look to 'Device  Manager' (Start -> Device Manager) to find what ports are assigned to your device"""
+
+    TIRadarInfoCZ = """
+    Spusťte zařízení kliknutím na tlačítko 'Start' a začnětě měřit kliknutím na tlačítko 'Measure'.
+
+    Zastavte měření kliknutím na tlačítko 'Stop'.
+
+    Pro volbu vlastních výstupních oken zvolte v horní liště 'Window' a zvolte vybrané výstupy. 
+    Optimální je zobrazit 'Terminal Window' a 'Graphical window'.
+    """
+    
+    TIRadarInfoEN = """
+    Press 'Start' button to start the device and 'Measure' to start receiving data. 
+
+    Press 'Stop' to stop measuring.
+
+    Press 'Window' in Menu bar and display desired window to show window with desired output.
+    Optimal windows are 'Terminal Window' and 'Graphical window'. 
+
+"""
