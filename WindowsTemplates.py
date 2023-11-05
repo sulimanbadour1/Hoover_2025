@@ -97,8 +97,8 @@ class DeviceWindowTemplate(QMainWindow):
         
         #Creating main menu cards
         self.device_menu = self.menu_bar.addMenu("&Connection/Device")
-        self.show_menu = self.menu_bar.addMenu("&Show")
-        #self.data_menu = self.menu_bar.addMenu("&Data")
+        self.window_menu = self.menu_bar.addMenu("&Window")
+        self.data_menu = self.menu_bar.addMenu("&Data")
         self.help_menu = self.menu_bar.addMenu("&Help")
       
         #Creating subcards - actions
@@ -109,12 +109,14 @@ class DeviceWindowTemplate(QMainWindow):
         self.device_info = QAction("&Device Info")
         self.connection_info = QAction("&Connection Info")
 
+
         #Adding subcards to proper cards of menu
-        self.show_menu_actions = [self.show_control, self.show_terminal, self.show_graphics, self.show_info] 
-        self.show_menu.addActions(self.show_menu_actions)
+        self.window_menu_actions = [self.show_control, self.show_terminal, self.show_graphics, self.show_info] 
+        self.window_menu.addActions(self.window_menu_actions)
 
         self.device_menu_actions = [self.device_info, self.connection_info]
         self.device_menu.addActions(self.device_menu_actions)
+
 
         #Adding menu bar to the window
         self.setMenuBar(self.menu_bar)
@@ -207,13 +209,26 @@ class DeviceWindowTemplate(QMainWindow):
         """
         #Implement connection according to adjusted window.
         pass
-
+    
+    def setElements(self):
+        """
+        Function enables or disables elements from window or subwindows
+        """
+        pass
     #
     #
     #Other functionns
     @pyqtSlot(str)
     def setStatusBarText(self, text: str):
         self.status_bar.showMessage(text)
+
+    @pyqtSlot(dict)
+    def controlDataFlow(self, dataflow_settings: dict):
+        """
+        Function enables to control dataflow to subwindows. 
+        It receives data from DataFlowWindow.give_settings()
+        """
+    
 
 
 class ControlTemplate(QWidget):
@@ -263,6 +278,7 @@ class TerminalTemplate(QWidget):
 
         Replace type with proper data type received from device (nd.array, int, list, dict, etc.)
         """
+
         pass
 
     def clearOutputBox(self):
@@ -270,6 +286,7 @@ class TerminalTemplate(QWidget):
         Function cleaning the terminal
         """
         self.output_box.clear()
+
 
 class PlotTemplate(QWidget):
 
@@ -326,6 +343,8 @@ class PlotTemplate(QWidget):
         
         Extract x_values and y_values from received data  Uncomment self.plot_data 
         """
+
+
 
         #Extracting  values 
         #x_values = data[0]
@@ -449,6 +468,43 @@ class MainWindow(QMainWindow):
             self.status_bar = QStatusBar()  
             self.setStatusBar(self.status_bar)  
             self.status_bar.showMaximized()
+
+
+class CentralWidgetWindow(QWidget):
+
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.createGUI()
+
+    def createGUI(self):
+        #Creating central widget with info
+        self.central_widget = QWidget(self)
+        self.central_widget.setMaximumSize(2000, 600)
+        self.central_widget.setBaseSize(2000, 600)
+
+        self.info_labelCZ = QLabel()
+        self.info_labelCZ.setWordWrap(True)
+        self.info_labelCZ.showMaximized()
+
+        self.info_labelEN = QLabel()
+        self.info_labelEN.setWordWrap(True)
+        self.info_labelEN.showMaximized()
+
+        self.central_widget_layout = QVBoxLayout()
+        self.central_widget.setLayout(self.central_widget_layout)
+        self.central_widget_layout.addWidget(self.info_labelCZ)
+        self.central_widget_layout.addWidget(self.info_labelEN)
+
+    def setInfoText(self, text: str, language = 'CZ'):
+        """
+        Function sets information text in central widget.
+        """
+        if language == 'CZ':
+            self.info_labelCZ.setText(text)
+            self.info_labelCZ.setFont(QFont('Times', 10))
+        elif language == 'EN':
+            self.info_labelEN.setText(text)
+            self.info_labelEN.setFont(QFont('Times', 8))
 
         
         
