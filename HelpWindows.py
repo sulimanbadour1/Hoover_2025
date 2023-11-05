@@ -14,6 +14,7 @@ class HelpWindow(QWidget):
         
         self.createGUI()
         self.connectGUI()
+        self.close()
         
     
     def connectGUI(self):
@@ -117,17 +118,19 @@ class HelpWindow(QWidget):
         selected_item = selected_item_name
 
         if selected_item == "About":
-            self.info_content.setText(self.info.About_text)
+            self.setInfo(Info.About_text)
+
         elif selected_item == "Introduction":
-            self.info_content.setText(self.info.Introduction_text)
+            self.setInfo(Info.Introduction_text)
+
         elif selected_item == "Settings Window":
-            self.info_content.setText(self.info.Settings_text)
+            self.setInfo(Info.SettingsTextCZ + Info.SettingsTextEN)
         elif selected_item == "RP Lidar Window":
-            self.info_content.setText(self.info.RPLidarSettings_text)
+            self.setInfo(Info.RPLidarSettings_text)
         elif selected_item == "Intel Real Sense Window":
-            self.info_content.setText(self.info.IntelRealSenseSettings_text)
+            self.setInfo(Info.IntelRealSenseSettings_text)
         if selected_item == "Sensor Window":
-            self.info_content.setText(self.info.SensorSettings_text)
+            self.setInfo(Info.SensorSettings_text)
     
 
     def receiveInfoRequest(self, selected_item: str):
@@ -136,14 +139,18 @@ class HelpWindow(QWidget):
         """
         self.showInfo(selected_item)
 
+    def setInfo(self, info_text):
+        self.info_content.setText(info_text)
+
+    
 
 
 
 
-"""
+""" 
 applicationAK = QApplication(sys.argv)
 window = HelpWindow()
 window.show() #windows are hidden by default
 applicationAK.exec_() # exec() function starts the event loop
-"""
+ """
 
