@@ -56,7 +56,7 @@ class IntelRealSenseWindow(DeviceWindowTemplate):
         self.device_interface.getDeviceInfo()
 
         #Showing graphical (self.plot_window) and camera window (self.plot_window_color) by default
-        self.show_default_windows()
+        self.showDefaultWindows()
 
     def moveTerminalToThread(self):
         self.terminal_thread = QThread()
@@ -81,7 +81,6 @@ class IntelRealSenseWindow(DeviceWindowTemplate):
         self.data_menu.addAction(self.depth_evaluation)
 
         #Setting central window with info
-        self.central_widget
         self.central_widget.setInfoText(Info.IntelRealSenseInfoCZ, 'CZ' )
         self.central_widget.setInfoText(Info.IntelRealSenseInfoEN, 'EN' )
         self.setCentralWidget(self.central_widget)
@@ -163,7 +162,7 @@ class IntelRealSenseWindow(DeviceWindowTemplate):
         self.terminal_window.printMatrix(cropped_image)
         plt.subplot(1,1,1)
         plt.imshow(cropped_image)
-        plt.title("Depth value")
+        plt.title("Depth value [mm]")
         plt.colorbar() 
 
         #Adding scale to image 
@@ -186,7 +185,7 @@ class IntelRealSenseWindow(DeviceWindowTemplate):
 
 
 
-    def show_default_windows(self):
+    def showDefaultWindows(self):
         """
         Function shows default output windows in main window.
         """
