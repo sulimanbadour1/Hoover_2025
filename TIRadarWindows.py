@@ -1,7 +1,10 @@
 import sys
-from PyQt5.QtWidgets import QPushButton, QWidget, QLabel, QTextEdit, QVBoxLayout
-from PyQt5.QtCore import pyqtSlot
-from WindowsTemplates import DeviceWindowTemplate, TerminalTemplate, ControlTemplate, InfoWindowTemplate, PlotTemplate
+from PyQt5.QtWidgets import QPushButton, QWidget, QLabel, QTextEdit,  QAction, QVBoxLayout
+from PyQt5.QtCore import pyqtSlot, QThread
+from WindowsTemplates import *
+from device_interfaces.TIRadarInterface import Device
+from Info import Info
+
 
 class TIRadarWindow(DeviceWindowTemplate):
      
@@ -15,34 +18,70 @@ class TIRadarWindow(DeviceWindowTemplate):
         self.terminal_window = TerminalWindow(self)
         self.plot_window = PlotWindow(self)
         self.info_window = InfoWindow(self)
-        #self.device_interface = Device(self)
-        #self.device_thread = QThread(self)
+        self.device_interface = Device(self)
+        self.device_thread = QThread(self)
+        self.central_widget = CentralWidgetWindow()
         self.createGUI()
         self.connectGUI()
+        self.adjustGUI()
         self.createThreadCommunication()
+        self.showDefaultWindows()
 
     def createGUI(self):
         return super().createGUI()
     
     def connectGUI(self):
         return super().connectGUI()
+
+    def adjustGUI(self):
+        #Creating menu options for dosconnection and reconnection of the device
+        self.disconnect_device = QAction("&Disconnect Device")
+        self.reconnect_device = QAction("&Reconnect Device")
+        self.device_menu.addAction(self.disconnect_device)
+        self.device_menu.addAction(self.reconnect_device)
+
+        #Setting central window with info
+        self.central_widget.setInfoText(Info.TIRadarInfoCZ, 'CZ' )
+        self.central_widget.setInfoText(Info.TIRadarInfoEN, 'EN' )
+        self.setCentralWidget(self.central_widget)
     
-    """
+
     def connectElements(self):
 
         #Connecting buttons to functions
-        self.control_window.start_button.clicked.connect(self.device_interface.startDevice)
+        self.control_window.measure_button.clicked.connect(self.device_interface.measureData)
         self.control_window.stop_button.clicked.connect(self.device_interface.stopDevice)
-        self.control_window.start_measure_button.clicked.connect(self.device_interface.measureData)
-        self.device_info.triggered.connect(self.device_interface.getDeviceInfo)
-
+        self.control_window.reset_button.clicked.connect(self.device_interface.reconnectDevice)
+        #self.device_info.triggered.connect(self.device_interface.getDeviceInfo)
+        self.reconnect_device.triggered.connect(self.device_interface.reconnectDevice)
+        self.disconnect_device.triggered.connect(self.device_interface.disconnectDevice)
+        
+        
         #Connecting signals from device control to functions (slots)
         self.device_interface.data_signal.connect(self.terminal_window.receiveData)
         self.device_interface.data_signal.connect(self.plot_window.updatePlot)
-        self.device_interface.info_signal.connect(self.info_window.receiveData)
+        #self.device_interface.info_signal.connect(self.info_window.receiveData)
         self.device_interface.message_signal.connect(self.setStatusBarText)
 
-    """
+    def showDefaultWindows(self):
+        """
+        Function shows default output windows in main window.
+        """
+        self.terminal_window_area.show()
+        self.plot_window_area.show()
+    
+    def closeEvent(self, event) -> None:
+        
+        #closing subwindows when main window is closed
+
+        self.control_window.close()
+        self.terminal_window.close()
+        self.plot_window.close()
+        self.info_window.close()
+        self.central_widget.close()
+
+
+
 
 
 
@@ -53,6 +92,7 @@ class ControlPanelWindow(ControlTemplate):
         self.createGUI()
 
     def createGUI(self):
+
         self.layout = QVBoxLayout()
 
         self.measure_button = QPushButton("Measure")
@@ -64,6 +104,7 @@ class ControlPanelWindow(ControlTemplate):
         self.layout.addWidget(self.reset_button)
         
         self.setLayout(self.layout)
+        
 
 class TerminalWindow(TerminalTemplate):
 
@@ -73,7 +114,6 @@ class TerminalWindow(TerminalTemplate):
 
     @pyqtSlot(dict)
     def receiveData(self, data):
-        current_time = data[0]
         x = str(data["x"])
         y = str(data["y"])
         self.output_box.insertPlainText(" x: " + x + " y: " + y + "\n")
@@ -89,6 +129,7 @@ class PlotWindow(PlotTemplate):
     
     @pyqtSlot(dict)
     def updatePlot(self, data):
+        self.graph_scatter.clear()
     
         #Multiple pairs of value received
         self.x_values = data["x"]
