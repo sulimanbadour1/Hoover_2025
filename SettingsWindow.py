@@ -2,7 +2,9 @@ import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtSerialPort import QSerialPort, QSerialPortInfo
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread, QObject
+from PyQt5.QtGui import QFont
 from IntelRealSenseData import IntelRealSenseData
+from Info import Info
 
 class SettingsWindow(QWidget):
         
@@ -29,9 +31,8 @@ class SettingsWindow(QWidget):
 
             #Properties of the SettingsWindow GUI
             self.move(300, 150)
-            self.setBaseSize(450, 600)
-            self.setMinimumSize(450, 400)
-            self.setMaximumSize(700, 700)
+            self.setBaseSize(1200, 800)
+            self.setMaximumSize(1200, 800)
             self.setWindowTitle('Settings Window') 
 
             #Calling function creating minor layouts
@@ -39,10 +40,20 @@ class SettingsWindow(QWidget):
             self.createPortSettingsGUI()
             self.createDeviceSpecifyGUI()
             self.createSettingsGUI()
-        
+
+            self.info_line1CZ = QLabel(Info.SettingsTextCZ)
+            self.info_line1CZ.setFont(QFont('Times', 10))
+            self.info_line1CZ.setWordWrap(True)
+            self.info_line1EN = QLabel(Info.SettingsTextEN)
+            self.info_line1EN.setFont(QFont('Times', 8))
+            self.info_line1EN.setWordWrap(True)
             #Adding minor layouts to the major layout
+            self.layout.addWidget(self.info_line1CZ)
+            self.layout.addWidget(self.info_line1EN)
             self.layout.addWidget(self.device_settings)
             self.layout.addWidget(self.port_settings)
+            self.layout.addWidget(self.search_ports_infoCZ)
+            self.layout.addWidget(self.search_ports_infoEN)
             self.layout.addWidget(self.spec_device_settings)
             self.layout.addWidget(self.ok_widget)
 
@@ -67,6 +78,8 @@ class SettingsWindow(QWidget):
             self.ok_widget_layout.addWidget(self.ok_button)
             self.ok_widget_layout.insertSpacing(1, 100)
             self.ok_widget_layout.addWidget(self.cancel_button)
+
+
 
         def createDeviceSettingsGUI(self):
 
@@ -97,6 +110,8 @@ class SettingsWindow(QWidget):
             self.port1_label = QLabel("Port 1: ") 
             self.port2_label = QLabel("Port 2: ")
             self.search_ports_button = QPushButton("Search ports")
+            self.search_ports_infoCZ = QLabel(Info.SettingsSearchPortsInfoCZ)
+            self.search_ports_infoEN = QLabel(Info.SettingsSearchPortsInfoEN)
             self.port1_combo_box = QComboBox()
             self.port2_combo_box = QComboBox()
             self.port2_combo_box.setEnabled(False)
@@ -144,6 +159,7 @@ class SettingsWindow(QWidget):
             self.port1_combo_box.setEnabled(False)
             self.port2_combo_box.setEnabled(False)
             self.search_ports_button.setEnabled(False)
+            self.spec_device_settings_combo_box.setEnabled(False)
 
             #Connecting other elements
             self.search_ports_button.clicked.connect(self.searchPorts) 
@@ -220,10 +236,9 @@ class SettingsWindow(QWidget):
         
 
 
-"""
-applicationAK = QApplication(sys.argv)
+""" applicationAK = QApplication(sys.argv)
 window = SettingsWindow()
 window.show() #windows are hidden by default
 applicationAK.exec() # exec() function starts the event loop
+ """
 
-"""
