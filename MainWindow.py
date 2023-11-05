@@ -20,6 +20,7 @@ from HelpWindows import HelpWindow
 from IntelRealSenseWindows import IntelRealSenseWindow
 
 
+
 class MainWindow(QMainWindow):
 
         def __init__(self):
@@ -158,9 +159,9 @@ class MainWindow(QMainWindow):
                         elif settings_values["Device"] == "Intel Real Sense":
                                 self.sensor_window = IntelRealSenseWindow()
                                 print("Intel realsense")
+
                         
                         self.sensor_window.show()
-                
               
         def verify_connection(self, settings_data: dict):
                 device = settings_data["Device"]
