@@ -1,4 +1,5 @@
 import sys
+from PyQt5 import QtGui
 from PyQt5.QtWidgets import  (QApplication, 
                         QMainWindow, 
                         QMenuBar,
@@ -10,6 +11,7 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import *
 from SettingsWindow import SettingsWindow
 from AppValues import AppValues
+from Info import Info
 #from sens_app.WindowsTemplates import ConnectionInfoWindow, MainWindowContent
 from RPLidarWindows import RPLidarWindow
 from TIRadarWindows import TIRadarWindow
@@ -32,9 +34,10 @@ class MainWindow(QMainWindow):
          
             self.connection_info_window = None 
 
+
             self.createGUI()
             self.connectGUI()
-       
+
         def createMenu(self):
                 self.menu_bar = QMenuBar(self)
                 self.menu_bar.move(0, 0)
@@ -86,8 +89,14 @@ class MainWindow(QMainWindow):
         
         
         def adjustGUI(self):
-                self.label = QLabel("Sensor Application")
-                self.label.setFont(QFont('Times', 18))
+                self.heading_label = QLabel("Sensor Application")
+                self.heading_label.setFont(QFont('Times', 18))
+
+                self.info_line1CZ = QLabel(Info.MainWindowInfoCZ)
+                self.info_line1CZ.setFont(QFont('Times', 10))
+                self.info_line1EN = QLabel(Info.MainWindowInfoEN)
+                self.info_line1EN.setFont(QFont('Times', 8))
+                
                 #Settings Window Button            
                 self.settings_button = QPushButton("Settings")
                 self.settings_button.setFixedSize(200, 50)
@@ -103,6 +112,9 @@ class MainWindow(QMainWindow):
                 self.cancel_button.setFixedSize(200, 50)
 
                 #Adding elements to the layout
+                self.layout.addWidget(self.heading_label, alignment = Qt.AlignCenter)
+                self.layout.addWidget(self.info_line1CZ, alignment = Qt.AlignCenter)
+                self.layout.addWidget(self.info_line1EN, alignment = Qt.AlignCenter)
                 self.layout.addWidget(self.run_button, alignment = Qt.AlignCenter )
                 self.layout.addWidget(self.settings_button, alignment = Qt.AlignCenter)
                 self.layout.addWidget(self.cancel_button, alignment = Qt.AlignCenter )
@@ -173,6 +185,24 @@ class MainWindow(QMainWindow):
                         verification_value = True
 
                 return verification_value
+        
+        def closeEvent(self, event) -> None:
+               
+             
+                if self.sensor_window is not None:
+                        self.sensor_window.close()
+
+                if self.info_window is not None:
+                        self.info_window.close()
+                if self.connection_info_window is not None:
+                       self.connection_info_window.close()
+        
+                self.settings_window.close()
+                self.help_window.close()
+           
+
+        
+
                         
 
         
