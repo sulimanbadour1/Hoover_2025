@@ -84,6 +84,8 @@ python MainWindow.py
 - Requires COM port configuration
 
 ## Project Structure
+
+```    
 source/
 ├── MainWindow.py # Main application window
 ├── SettingsWindow.py # Device configuration window
@@ -93,4 +95,6 @@ source/
 ├── app_functions/ # Utility functions
 ├── app_info/ # Application information
 └── source_rp/ # RP Lidar specific code
+
+```
 
