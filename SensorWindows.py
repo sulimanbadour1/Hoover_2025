@@ -18,7 +18,7 @@ from matplotlib.figure import Figure
 
 class SensorWindow(DeviceWindowTemplate):
 
-    def __init__(self, parent):
+    def __init__(self, parent = None):
         super().__init__()
         self.control_window = ControlPanelWindow(self)
         self.terminal_window = TerminalWindow(self)
@@ -53,7 +53,7 @@ class SensorWindow(DeviceWindowTemplate):
 class ControlPanelWindow(ControlTemplate):
     trigger_measure_signal = pyqtSignal(bool)
 
-    def __init__(self, parent):
+    def __init__(self, parent = None):
         super().__init__(parent)
         
         self.createGUI()
@@ -96,6 +96,7 @@ class ControlPanelWindow(ControlTemplate):
         #self.layout.addStretch()
         #self.layout.setContentsMargins(20, 20, 20, 20)
         self.setLayout(self.layout)
+        self.hide()
 
  
 
@@ -205,13 +206,13 @@ class ManageData:
 
 
 
-"""
+""" 
 applicationAK = QApplication(sys.argv)
-window = ControlPanelWindow()
+window = SensorWindow()
 window.show() #windows are hidden by default
 applicationAK.exec() # exec() function starts the event loop
-"""
 
+ """
 """
 Sources:
 https://pythonprogramminglanguage.com/pyqt-menu/

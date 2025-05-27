@@ -14,14 +14,18 @@ class SettingsWindow(QWidget):
         def __init__(self):
             super().__init__()
             
-            self.device_list = ["No device","RP Lidar", "TI Radar", "Time of Flight", "Intel Real Sense",  "Sensor"]
-            self.inter_real_sense_devices =  ["No Intel device", "Lidar L500", "Depth Camera D435i Dev 1", "Depth Camera D435i Dev 2"]
+            self.device_list = ["No device","RP Lidar", "TI Radar", "Intel Real Sense"]
+            #self.device_list = ["No device","RP Lidar", "TI Radar", "Time of Flight", "Intel Real Sense",  "Sensor"]
+            self.inter_real_sense_devices =  ["No Intel device", "Lidar L500", "Depth Camera D435i Dev 1 (Front)", "Depth Camera D435i Dev 2 (Back)"]
+            self.rs_serial_numbers = ["", "f1320623", "241122074115", "241222076731"]
             self.data = IntelRealSenseData()
 
             self.port_list = ["No port"]
             self.createGUI()
             self.connectGUI()
             
+        def ListRSDevices(self):
+             return self.inter_real_sense_devices, self.rs_serial_numbers
 
         def createGUI(self):
 
@@ -132,7 +136,7 @@ class SettingsWindow(QWidget):
         def createDeviceSpecifyGUI(self):
              
             #Creating Layout of the section
-            self.spec_device_settings = QGroupBox("Sepecify device")
+            self.spec_device_settings = QGroupBox("Specify device")
             self.spec_device_settings_layout = QGridLayout()
             self.spec_device_settings.setLayout(self.spec_device_settings_layout)
 
@@ -199,11 +203,15 @@ class SettingsWindow(QWidget):
                 for port in port_list:
                     port_names.append(port.portName())
                 self.port_list = port_names
-
             self.port1_combo_box.clear()
             self.port1_combo_box.addItems(self.port_list)
-            self.port2_combo_box.clear()
-            self.port2_combo_box.addItems(self.port_list)
+            if self.device_combo_box.currentText() == "TI Radar":
+                self.port2_combo_box.clear()
+                self.port2_combo_box.addItems(self.port_list)
+                self.port1_combo_box.setCurrentText(self.port_list[1])
+                self.port2_combo_box.setCurrentText(self.port_list[0])
+        
+                
 
         def controlPortCombos(self, device_name):
             if device_name == "RP Lidar" or device_name == "Time of Flight":

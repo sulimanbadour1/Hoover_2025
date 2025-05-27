@@ -1,4 +1,6 @@
 import sys
+print(sys.path)
+
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import  (QApplication, 
                         QMainWindow, 
@@ -43,9 +45,9 @@ class MainWindow(QMainWindow):
                 self.menu_bar = QMenuBar(self)
                 self.menu_bar.move(0, 0)
                 self.menu_bar.setMaximumHeight(30)
-                self.device_menu = self.menu_bar.addMenu("&Connection/Device")
+                # self.device_menu = self.menu_bar.addMenu("&Connection/Device")
                 #self.data_menu = self.menu_bar.addMenu("&Data")
-                self.help_menu = self.menu_bar.addMenu("&Help")
+                # self.help_menu = self.menu_bar.addMenu("&Help")
 
 
                 self.connection_info = QAction("&Connection Info")
@@ -55,11 +57,11 @@ class MainWindow(QMainWindow):
                 self.general_help = QAction("&Open Help")
                 self.about_help = QAction("&About")
 
-                self.device_menu.addAction(self.connection_info)
-                self.help_menu.addAction(self.intro_help)
-                self.help_menu.addAction(self.window_help)
-                self.help_menu.addAction(self.general_help)
-                self.help_menu.addAction(self.about_help)
+                # self.device_menu.addAction(self.connection_info)
+                # self.help_menu.addAction(self.intro_help)
+                # self.help_menu.addAction(self.window_help)
+                # self.help_menu.addAction(self.general_help)
+                # self.help_menu.addAction(self.about_help)
              
                 self.setMenuBar(self.menu_bar)
 
@@ -77,7 +79,8 @@ class MainWindow(QMainWindow):
                 
                         
                 self.setWindowTitle("Sensor Application")
-                self.setGeometry(50, 50, 1000, 800)
+                #self.setGeometry(50, 50, 1000, 800)
+                self.showMaximized()
 
                 self.createMenu()
                 self.createStatusBar()
@@ -90,39 +93,56 @@ class MainWindow(QMainWindow):
         
         
         def adjustGUI(self):
+                self.button_height = 50
+                self.button_width = 250
                 self.heading_label = QLabel("Sensor Application")
                 self.heading_label.setFont(QFont('Times', 18))
 
                 self.info_line1CZ = QLabel(Info.MainWindowInfoCZ)
                 self.info_line1CZ.setFont(QFont('Times', 10))
                 self.info_line1EN = QLabel(Info.MainWindowInfoEN)
-                self.info_line1EN.setFont(QFont('Times', 8))
-                
-                #Settings Window Button            
-                self.settings_button = QPushButton("Settings")
-                self.settings_button.setFixedSize(200, 50)
-
-
-                #Sensor Window Button            
-                self.run_button = QPushButton("RUN")
-                self.run_button.setFixedSize(200, 50)
+                self.info_line1EN.setFont(QFont('Times', 10))
 
 
                 #Cancel Window Button
-                self.cancel_button = QPushButton("Cancel")
-                self.cancel_button.setFixedSize(200, 50)
+                self.cancel_button = QPushButton("Quit App")
+                self.cancel_button.setFixedSize(self.button_width, self.button_height)
+
+                #Sensor list
+                self.rp_lidar = QPushButton("RP Lidar")
+                self.rp_lidar.setFixedSize(self.button_width, self.button_height)
+
+                self.ti_radar = QPushButton("TI Radar")
+                self.ti_radar.setFixedSize(self.button_width, self.button_height)
+
+                self.rs_515 = QPushButton("Intel Lidar L515")
+                self.rs_515.setFixedSize(self.button_width, self.button_height)
+
+                self.front_d435 = QPushButton("Front Intel DepthCamera D435")
+                self.front_d435.setFixedSize(self.button_width, self.button_height)
+
+                self.back_d435 = QPushButton("Back Intel DepthCamera D435")
+                self.back_d435.setFixedSize(self.button_width, self.button_height)
+
 
                 #Adding elements to the layout
                 self.layout.addWidget(self.heading_label, alignment = Qt.AlignCenter)
                 self.layout.addWidget(self.info_line1CZ, alignment = Qt.AlignCenter)
                 self.layout.addWidget(self.info_line1EN, alignment = Qt.AlignCenter)
-                self.layout.addWidget(self.run_button, alignment = Qt.AlignCenter )
-                self.layout.addWidget(self.settings_button, alignment = Qt.AlignCenter)
+                self.layout.addWidget(self.rp_lidar, alignment = Qt.AlignCenter)
+                self.layout.addWidget(self.ti_radar, alignment = Qt.AlignCenter)
+                self.layout.addWidget(self.rs_515, alignment = Qt.AlignCenter)
+                self.layout.addWidget(self.front_d435, alignment = Qt.AlignCenter)
+                self.layout.addWidget(self.back_d435, alignment = Qt.AlignCenter)
                 self.layout.addWidget(self.cancel_button, alignment = Qt.AlignCenter )
 
         def connectGUI(self):
-               self.run_button.clicked.connect(self.runDeviceWindow)
-               self.settings_button.clicked.connect(self.runSettingsWindow)
+               self.rp_lidar.clicked.connect(self.openRPLidarWindow)
+               self.ti_radar.clicked.connect(self.openTIRadarWindow)
+               self.rs_515.clicked.connect(self.openRS515Window)
+               self.front_d435.clicked.connect(self.openFrontD435Window)
+               self.back_d435.clicked.connect(self.openBackD435Window)
+               self.cancel_button.clicked.connect(self.close)
                self.settings_window.settings_signal.connect(self.application_values.receiveSettingsData)
                self.connection_info.triggered.connect(self.application_values.updateSettingsData) #connection similar to previous one in case no data are received by aplication_values from settings window
                #self.application_values.update_signal.connect(self.connection_info_window.createInfo) 
@@ -136,9 +156,30 @@ class MainWindow(QMainWindow):
                 self.sensor_window.connection_info.triggered.connect(self.application_values.updateSettingsData)
                 self.connection_info.triggered.connect(self.showConnectionInfoWindow)
         
+        def openRPLidarWindow(self):
+               self.sensor_window = RPLidarWindow()
+               self.sensor_window.show()
+
+        def openTIRadarWindow(self):
+               self.sensor_window = TIRadarWindow()
+               self.sensor_window.show()
+
+        def openRS515Window(self):
+               self.sensor_window = IntelRealSenseWindow("f1320623")
+               self.sensor_window.show()
+
+        def openFrontD435Window(self):
+               self.sensor_window = IntelRealSenseWindow("241122074115")
+               self.sensor_window.show()
+
+        def openBackD435Window(self):
+               self.sensor_window = IntelRealSenseWindow("241222076731")
+               self.sensor_window.show()
+                      
+
         def runSettingsWindow(self): 
                self.settings_running = True
-               self.settings_window.show()
+               self.settings_window.show()               
 
         def showConnectionInfoWindow(self):
                self.connection_info_window.show()
@@ -147,20 +188,32 @@ class MainWindow(QMainWindow):
                self.help_window.show()
 
         def runDeviceWindow(self):
+               self.sensor_window = None
                settings_values = self.application_values.giveSettingsData()
                verification = self.verify_connection(settings_values) #veryfying proper settings
+               realsense_devices, realsense_serials = self.settings_window.ListRSDevices() #get list of RS Devices
+               
                if self.sensor_window is None and verification == True:
+                        port1 = settings_values["Port 1"]
+                        port1 = "/dev/" + port1
+                        port2 = settings_values["Port 2"]
+                        port2 = "/dev/" + port2 
+
                         if settings_values["Device"] == "RP Lidar":
-                                self.sensor_window = RPLidarWindow()
+                                self.sensor_window = RPLidarWindow(port1)
                         elif settings_values["Device"] == "Time Of Flight":
                                 self.sensor_window = TOFWindow()
                         elif settings_values["Device"] == "TI Radar":
-                                self.sensor_window = TIRadarWindow()
-                        elif settings_values["Device"] == "Intel Real Sense":
-                                self.sensor_window = IntelRealSenseWindow()
-                                print("Intel realsense")
-
-                        
+                                
+                                
+                                self.sensor_window = TIRadarWindow(port1, port2) #Giving port numbers
+                                
+                        elif settings_values["Device"] == "Intel Real Sense" and settings_values["Device specification"] != "No device":
+                                print(realsense_serials)
+                                for i in range(0, len(realsense_devices)):
+                                        if settings_values["Device specification"] == realsense_devices[i]:
+                                                self.serial_number = realsense_serials[i]
+                                self.sensor_window = IntelRealSenseWindow(self.serial_number)     
                         self.sensor_window.show()
               
         def verify_connection(self, settings_data: dict):
@@ -169,22 +222,17 @@ class MainWindow(QMainWindow):
                 port2 = settings_data["Port 2"]
                 specification = settings_data["Device specification"]
                 serial_number = settings_data["Serial number"]
-
                 verification_value = False
                 if device == "No device":
                         self.status_bar.showMessage("Select device and  make proper settings of ports by clicking on 'Settings' button.")
-                elif device == ("RP Lidar" or "Time of Flight"):
-                        if port1 == "No port":
-                                self.status_bar.showMessage(f"{device} requires setting the port. Make proper setting by clicking on 'Settings' button") 
-                elif device == "TI Radar":
-                        if (port1 == "No port" or port2 == "No port"):
-                                self.status_bar.showMessage(f"{device} requires setting two ports. Make proper setting by clicking on 'Settings' button") 
-                elif device == ("Intel Real Sense L500" or "Intel Real Sense  D435 Dev 1" or "Intel Real Sense D435 Dev 2"):
-                        if specification == "No specification":
-                                self.status_bar.showMessage(f"{device} requires specification. Make proper setting by clicking on 'Settings' button")
+                elif device == ("RP Lidar" or "Time of Flight") and port1 == "No port":
+                        self.status_bar.showMessage(f"{device} requires setting the port. Make proper setting by clicking on 'Settings' button")
+                elif device == ("Intel Real Sense L500" or "Intel Real Sense  D435 Dev 1" or "Intel Real Sense D435 Dev 2") and specification == "No specification":
+                         self.status_bar.showMessage(f"{device} requires specification. Make proper setting by clicking on 'Settings' button")        
+                elif device == ("TI Radar") and (port1 == "No port" or port2 == "No port") or (device == ("TI Radar") and (port1 == port2)):
+                        self.status_bar.showMessage(f"{device} requires setting two ports. Make proper setting by clicking on 'Settings' button") 
                 else:
-                        verification_value = True
-
+                     verification_value = True                
                 return verification_value
         
         def closeEvent(self, event) -> None:

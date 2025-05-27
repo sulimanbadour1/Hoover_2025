@@ -57,7 +57,8 @@ class DeviceWindowTemplate(QMainWindow):
             self.createThreadCommunication()
 
     def destroyThread(self):
-        self.device_thread.terminate()
+        self.device_thread.quit()
+        self.device_thread.wait()
     
 
     #
@@ -71,8 +72,9 @@ class DeviceWindowTemplate(QMainWindow):
         Function Creates GUI of Main Device Window
         """
         self.setWindowTitle("Device window")
-        self.setGeometry(100, 100, 300, 500)
-        #self.showMaximized()        
+        #self.setGeometry(100, 100, 300, 500)
+        self.resize(1920, 1080)
+        self.showMaximized()        
     
         #self.layout = QVBoxLayout(self)
         self.createMenu()
@@ -96,26 +98,26 @@ class DeviceWindowTemplate(QMainWindow):
         self.menu_bar.adjustSize()
         
         #Creating main menu cards
-        self.device_menu = self.menu_bar.addMenu("&Connection/Device")
-        self.window_menu = self.menu_bar.addMenu("&Window")
-        self.data_menu = self.menu_bar.addMenu("&Data")
-        self.help_menu = self.menu_bar.addMenu("&Help")
+        # self.device_menu = self.menu_bar.addMenu("&Connection/Device")
+        self.window_menu = self.menu_bar.addMenu("&View")
+        # self.data_menu = self.menu_bar.addMenu("&Data")
+        # self.help_menu = self.menu_bar.addMenu("&Help")
       
         #Creating subcards - actions
         self.show_control = QAction("&Control Panel")
         self.show_terminal = QAction("&Terminal window")
-        self.show_graphics = QAction("&Graphical window")
+        self.show_graphics = QAction("&Plot")
         self.show_info = QAction("&Info Terminal")
         self.device_info = QAction("&Device Info")
         self.connection_info = QAction("&Connection Info")
 
 
         #Adding subcards to proper cards of menu
-        self.window_menu_actions = [self.show_control, self.show_terminal, self.show_graphics, self.show_info] 
+        self.window_menu_actions = [self.show_control, self.show_graphics, self.show_terminal] 
         self.window_menu.addActions(self.window_menu_actions)
 
-        self.device_menu_actions = [self.device_info, self.connection_info]
-        self.device_menu.addActions(self.device_menu_actions)
+        # self.device_menu_actions = [self.device_info, self.connection_info]
+        # self.device_menu.addActions(self.device_menu_actions)
 
 
         #Adding menu bar to the window
@@ -132,9 +134,9 @@ class DeviceWindowTemplate(QMainWindow):
         """
 
         #Creating dockerizing areas
-        self.control_window_area = QDockWidget('ControlWindow Area')
+        self.control_window_area = QDockWidget('Control Panel')
         self.terminal_window_area = QDockWidget('Terminal Window Area')
-        self.plot_window_area = QDockWidget('Plot Window Area')
+        self.plot_window_area = QDockWidget('Plot Window')
         self.info_window_area = QDockWidget('Info Window Area')
 
         self.control_window_area.setGeometry(0,0, 200, 300)
@@ -165,7 +167,7 @@ class DeviceWindowTemplate(QMainWindow):
         self.addDockWidget(Qt.LeftDockWidgetArea, self.control_window_area)
         self.addDockWidget(Qt.RightDockWidgetArea, self.plot_window_area)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.info_window_area)
-        self.addDockWidget(Qt.BottomDockWidgetArea, self.terminal_window_area)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.terminal_window_area)
     
     
     def adjustGUI(self):
@@ -332,6 +334,8 @@ class PlotTemplate(QWidget):
         #self.graph.addItem(self.center_scatter)
         self.graph.setXRange(-3, 3)
         self.graph.setYRange(-3,3)
+        self.graph.setLabel('left','Y [mm]')
+        self.graph.setLabel('bottom','X [mm]')
 
     @pyqtSlot(type)
     def updatePlot(self, data):
@@ -345,7 +349,7 @@ class PlotTemplate(QWidget):
         """
 
 
-
+        self.sensor_position = self.graph_scatter.addPoints([0], [0], brush=pg.mkBrush('r'))
         #Extracting  values 
         #x_values = data[0]
         #y_values = data[1]

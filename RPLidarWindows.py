@@ -7,22 +7,24 @@ from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread, QObject, Qt
 from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QSlider, QVBoxLayout, QHBoxLayout, QAction, QLineEdit, QApplication
 from pyqtgraph import  plot, mkPen, PlotItem, ScatterPlotWidget, ScatterPlotItem, mkBrush
 import pyqtgraph as pg
+import numpy as np
 
 class RPLidarWindow(DeviceWindowTemplate):
 
-    def __init__(self, parent = None, port = 'COM3'):
+    def __init__(self, port = 'COM3'):
         super().__init__()
         self.port = port
-
         self.control_window = ControlPanelWindow(self)
         self.terminal_window = TerminalWindow(self)
         self.plot_window = PlotWindow(self)
         self.info_window = InfoWindow(self)
-        self.device_interface = Device(self, self.port)
+        self.device_interface = Device(self)
         self.device_thread = QThread(self)
+        self.device_interface.startDevice()
         self.createGUI()
         self.connectGUI()
         self.createThreadCommunication()
+        self.plot_window_area.show()
 
     def createGUI(self):
         return super().createGUI()
@@ -30,25 +32,37 @@ class RPLidarWindow(DeviceWindowTemplate):
     def connectGUI(self):
         return super().connectGUI()
     
-    def adjustGUI(self):
-        #Creating menu options for dosconnection and reconnection of the device
-        self.disconnect_device = QAction("&Disconnect Device")
-        self.reconnect_device = QAction("&Reconnect Device")
-        self.device_menu.addAction(self.disconnect_device)
-        self.device_menu.addAction(self.reconnect_device)
+        
     
+    # def adjustGUI(self):
+    #     #Creating menu options for disconnection and reconnection of the device
+    #     self.disconnect_device = QAction("&Disconnect Device")
+    #     self.reconnect_device = QAction("&Reconnect Device")
+    #     self.device_menu.addAction(self.disconnect_device)
+    #     self.device_menu.addAction(self.reconnect_device)
+    
+    def closeEvent(self, event):
+        #End communication when closing window
+        self.device_interface.stopDevice()
+        self.destroyThread()
+        #super().closeEvent(self, event)
+        self.plot_window_area.close()
+        self.close()
+        # print("Ukoncujeme")
+
   
     def connectElements(self):
 
         #Connecting buttons to functions
-        self.control_window.start_button.clicked.connect(self.device_interface.startDevice)
+        self.control_window.start_button.clicked.connect(self.device_interface.measureData) 
+        # self.control_window.start_button.clicked.connect(self.CreateThread)  
         self.control_window.stop_button.clicked.connect(self.device_interface.stopDevice)
-        self.control_window.start_motor_button.clicked.connect(self.device_interface.startMotor)
-        self.control_window.stop_motor_button.clicked.connect(self.device_interface.stopMotor)
-        self.control_window.start_measure_button.clicked.connect(self.device_interface.measureData)
-        self.device_info.triggered.connect(self.device_interface.getDeviceInfo)
-        self.reconnect_device.triggered.connect(self.device_interface.reconnectDevice)
-        self.disconnect_device.triggered.connect(self.device_interface.disconnectDevice)
+        # self.control_window.start_motor_button.clicked.connect(self.device_interface.startMotor)
+        # self.control_window.stop_motor_button.clicked.connect(self.device_interface.stopMotor)
+        # self.control_window.start_measure_button.clicked.connect(self.device_interface.measureData)
+        # self.device_info.triggered.connect(self.device_interface.getDeviceInfo)
+        # self.reconnect_device.triggered.connect(self.device_interface.reconnectDevice)
+        # self.disconnect_device.triggered.connect(self.device_interface.disconnectDevice)
 
 
         #Connecting signals from device control to functions (slots)
@@ -56,11 +70,13 @@ class RPLidarWindow(DeviceWindowTemplate):
         self.device_interface.data_signal.connect(self.plot_window.updatePlot)
         self.device_interface.info_signal.connect(self.info_window.receiveData)
         self.device_interface.message_signal.connect(self.setStatusBarText)
-        self.control_window.pwm_value_signal.connect(self.device_interface.setPWM)
+        # self.control_window.pwm_value_signal.connect(self.device_interface.setPWM)
+
+
 
 class ControlPanelWindow(ControlTemplate):
     trigger_measure_signal = pyqtSignal(bool)
-    pwm_value_signal = pyqtSignal(int)
+    # pwm_value_signal = pyqtSignal(int)
     message_signal = pyqtSignal(str)
 
     def __init__(self, parent):
@@ -75,57 +91,64 @@ class ControlPanelWindow(ControlTemplate):
         #window properties
         self.setWindowTitle("Control Panel - RP Lidar")
         self.setGeometry(100, 100, 300, 500)
+        
 
         #Creating layouts snd sublayouts
         self.layout = QHBoxLayout()
         self.button_layout = QVBoxLayout()
-        self.slider_layout = QVBoxLayout()
+        # self.slider_layout = QVBoxLayout()
         self.button_layout_widget = QWidget()
-        self.slider_layout_widget = QWidget()
+        # self.slider_layout_widget = QWidget()
 
         #Creating elements and setting the geometry
-        self.start_button = QPushButton("Start")
-        self.stop_button = QPushButton("Stop")
-        self.start_motor_button = QPushButton("Start motor")
-        self.stop_motor_button = QPushButton("Stop motor")
-        self.start_measure_button = QPushButton("Measure")
+        self.start_button = QPushButton("Start Measuring")
+        self.stop_button = QPushButton("Stop Measuring")
+
+        #Odmazani nepotrebnych tlacitek
+
+        # self.start_motor_button = QPushButton("Start motor")
+        # self.stop_motor_button = QPushButton("Stop motor")
+        # self.start_measure_button = QPushButton("Measure")
         self.start_button.setGeometry(50, 50, 200, 25)
         self.stop_button.setGeometry(50, 100, 200, 25)
-        self.start_motor_button.setGeometry(50, 150, 200, 25)
-        self.stop_motor_button.setGeometry(50, 200, 200, 25)
-        self.slider = QSlider(self)
-        self.slider.setMinimum(0)
-        self.slider.setMaximum(1000)
-        self.slider.setMinimumHeight(200)
-        self.slider.setMaximumHeight(1000)
-        self.pwm_label = QLabel("PWM: ")
-        self.pwm_input = QLineEdit(self)
-        
+        # self.start_motor_button.setGeometry(50, 150, 200, 25)
+        # self.stop_motor_button.setGeometry(50, 200, 200, 25)
+        # self.slider = QSlider(self)
+        # self.slider.setMinimum(0)
+        # self.slider.setMaximum(1000)
+        # self.slider.setMinimumHeight(200)
+        # self.slider.setMaximumHeight(1000)
+        # self.pwm_label = QLabel("PWM: ")
+        # self.pwm_input = QLineEdit(self)
     
         #Adding elemts to the layouts
         self.button_layout.addWidget(self.start_button)
         self.button_layout.addWidget(self.stop_button)
-        self.button_layout.addWidget(self.start_motor_button)
-        self.button_layout.addWidget(self.stop_motor_button)
-        self.button_layout.addWidget(self.start_measure_button)
-        self.slider_layout.addWidget(self.pwm_label, alignment= Qt.AlignCenter)
-        self.slider_layout.addWidget(self.slider, alignment= Qt.AlignCenter )
-        self.slider_layout.addWidget(self.pwm_input, alignment= Qt.AlignCenter)
+
+        #Odmazani nepotrebnych tlacitek
+
+        #self.button_layout.addWidget(self.start_motor_button)
+        #self.button_layout.addWidget(self.stop_motor_button)
+        # self.button_layout.addWidget(self.start_measure_button)
+        # self.slider_layout.addWidget(self.pwm_label, alignment= Qt.AlignCenter)
+        # self.slider_layout.addWidget(self.slider, alignment= Qt.AlignCenter )
+        # self.slider_layout.addWidget(self.pwm_input, alignment= Qt.AlignCenter)
         
 
         self.button_layout_widget.setLayout(self.button_layout)
-        self.slider_layout_widget.setLayout(self.slider_layout)
+        # self.slider_layout_widget.setLayout(self.slider_layout)
 
         #Adding sublayouts to the main layout
         self.layout.addWidget(self.button_layout_widget)
-        self.layout.addWidget(self.slider_layout_widget)
+        # self.layout.addWidget(self.slider_layout_widget)
 
         self.setLayout(self.layout)
 
     def connectGUI(self):
-        self.slider.valueChanged.connect(self.changePWMInput)
-        self.slider.sliderReleased.connect(self.emitPWMvalueSlider)
-        self.pwm_input.editingFinished.connect(self.emitPWMvalueInput)
+        pass
+        # self.slider.valueChanged.connect(self.changePWMInput)
+        # self.slider.sliderReleased.connect(self.emitPWMvalueSlider)
+        # self.pwm_input.editingFinished.connect(self.emitPWMvalueInput)
 
     
     def changePWMInput(self, value: int):
@@ -147,7 +170,6 @@ class ControlPanelWindow(ControlTemplate):
 
     def emitPWMvalueSlider(self):
         pwm_value = self.slider.value()
-        print(type(pwm_value))
         self.pwm_value_signal.emit(pwm_value)
 
     def emitPWMvalueInput(self):
@@ -174,44 +196,40 @@ class TerminalWindow(TerminalTemplate):
     
     @pyqtSlot(tuple)
     def receiveData(self, data):
-        i = 0
-        for scan in data[0]:
-            angle = str(data[0][i])
-            distance = str(data[1][i])
-            i+=1
-            self.output_box.insertPlainText(angle + " " + distance + "\n")
-
+        # i = 0
+        # for scan in data[0]:
+        #     angle = str(data[0][i])
+        #     distance = str(data[1][i])
+        #     i+=1
+        #     self.output_box.insertPlainText(angle + " " + distance + "\n")
+        self.output_box.insertPlainText("lines"+ "\n")
 
 class PlotWindow(PlotTemplate):
     def __init__(self, parent):
         super().__init__(self)
-        self.x_values = [0]
-        self.y_values = [0]
+ 
+
         
         self.createGUI()
         
     def adjustGUI(self):
 
         #Adjjusting plot (plot in original template measures in the meters while RPLidar measures in the milimeters)
-        self.graph.setXRange(-1500, 1500)
-        self.graph.setYRange(-1500,1500)
+        self.graph.setXRange(-5000, 5000)
+        self.graph.setYRange(-5000,5000)
           
     @pyqtSlot(tuple)
     def updatePlot(self, data):
-
-        i = 0
-        #Multiple pairs of value received
-        self.x_values = [0]
-        self.y_values = [0]
-        for item in data[0]:
-            x = cos(data[0][i]) * data[1][i]
-            y = sin(data[0][i]) * data[1][i]
-            self.x_values.append(x)
-            self.y_values.append(y)
-            i+=1
+        self.blockSignals(True)
+        as_np = np.asarray(data)
+        y_data = as_np[:, 0]
+        x_data = as_np[:, 1]
         self.graph_scatter.clear()
-        #self.center_point = self.center_scatter.addPoints([0], [0])
-        self.plot_data = self.graph_scatter.addPoints(self.x_values, self.y_values )
+        self.plot_data = self.graph_scatter.setData(x=x_data, y=y_data, brush=pg.mkBrush(30, 255, 0, 255))
+        self.sensor_position = self.graph_scatter.addPoints([0], [0], brush=pg.mkBrush('r'))
+        self.blockSignals(False)
+        
+
 
   
 class InfoWindow(InfoWindowTemplate):
